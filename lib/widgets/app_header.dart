@@ -67,29 +67,28 @@ class AppHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // PINYACURE text
+              // PINYACURE text - matching image exactly
               RichText(
                 text: const TextSpan(
-                  style: TextStyle(
-                    fontFamily: 'Roboto', // Sans-serif
-                  ),
                   children: [
                     TextSpan(
                       text: 'PINYA',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.primaryGreenDark, // Dark green
-                        letterSpacing: 0.5,
+                        letterSpacing: 1.2,
+                        height: 1.0,
                       ),
                     ),
                     TextSpan(
                       text: 'CURE',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.accentYellow, // Bright yellow
-                        letterSpacing: 0.5,
+                        letterSpacing: 1.2,
+                        height: 1.0,
                       ),
                     ),
                   ],
