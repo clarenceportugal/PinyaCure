@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../widgets/app_header.dart';
 import '../constants/app_colors.dart';
 import '../services/ml_service.dart';
+import 'treatment_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -402,33 +403,36 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
           const SizedBox(height: 10),
           // View Treatment Button
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.primaryGreen.withOpacity(0.2),
+          GestureDetector(
+            onTap: () => _openTreatmentScreen(context),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.primaryGreen.withOpacity(0.2),
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'View Treatment',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.primaryGreen,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'View Treatment',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryGreen,
+                    ),
                   ),
-                ),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.primaryGreen,
-                  size: 20,
-                ),
-              ],
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: AppColors.primaryGreen,
+                    size: 16,
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -574,6 +578,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openTreatmentScreen(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TreatmentScreen(
+          diseaseName: detectedDisease,
+          confidence: confidence,
+        ),
       ),
     );
   }
