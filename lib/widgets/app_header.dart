@@ -14,15 +14,16 @@ class AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: AppColors.cardWhite,
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.divider,
-            width: 1,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-        ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -30,21 +31,22 @@ class AppHeader extends StatelessWidget {
           // Logo and Title
           Row(
             children: [
+              // Rounded square logo
               Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryGreen.withOpacity(0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
                     'assets/logo/pinyacure_logo.png',
                     fit: BoxFit.cover,
@@ -52,63 +54,62 @@ class AppHeader extends StatelessWidget {
                       return Container(
                         decoration: BoxDecoration(
                           color: AppColors.primaryGreenLight,
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
                           Icons.eco_rounded,
                           color: Colors.white,
-                          size: 20,
+                          size: 24,
                         ),
                       );
                     },
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'PINYA',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryGreen,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        TextSpan(
-                          text: 'CURE',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.accentYellow,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
+              const SizedBox(width: 12),
+              // PINYACURE text
+              RichText(
+                text: const TextSpan(
+                  style: TextStyle(
+                    fontFamily: 'Roboto', // Sans-serif
                   ),
-                ],
+                  children: [
+                    TextSpan(
+                      text: 'PINYA',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGreenDark, // Dark green
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    TextSpan(
+                      text: 'CURE',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.accentYellow, // Bright yellow
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          // Headphone icon
+          // Headphone icon (simple black outline)
           if (showHeadphoneIcon)
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primaryGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
+            IconButton(
+              icon: const Icon(
+                Icons.headphones_outlined,
+                color: Colors.black87,
+                size: 24,
               ),
-              child: const Icon(
-                Icons.headphones_rounded,
-                color: AppColors.primaryGreen,
-                size: 22,
-              ),
+              onPressed: () {
+                // TODO: Add headphone functionality
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
             ),
         ],
       ),
