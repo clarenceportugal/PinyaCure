@@ -25,7 +25,7 @@ class HomeScreen extends StatelessWidget {
                       child: Container(
                         margin: const EdgeInsets.only(top: 8),
                         child: Image.asset(
-                          'assets/images/parts.jpg',
+                          'assets/images/parts.png',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
