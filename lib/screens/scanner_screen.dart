@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../widgets/app_header.dart';
 import '../constants/app_colors.dart';
+import '../services/ml_service.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -18,16 +19,26 @@ class _ScannerScreenState extends State<ScannerScreen> {
   bool _isInitialized = false;
   bool _isPermissionGranted = false;
   bool _isLoading = true;
+  bool _isAnalyzing = false;
 
-  // Scan results (placeholder values)
-  String detectedDisease = 'Phytophthora Heart Rot (Top Rot)';
-  double confidence = 92.0;
+  // Scan results - will be updated by ML model
+  String detectedDisease = 'Tap camera to scan';
+  double confidence = 0.0;
   String sweetnessLevel = 'M3';
+  String sweetnessName = 'Sweet';
+
+  // ML Service
+  final MLService _mlService = MLService.instance;
 
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
+    _initializeAll();
+  }
+
+  Future<void> _initializeAll() async {
+    await _initializeCamera();
+    await _mlService.initialize();
   }
 
   Future<void> _initializeCamera() async {
@@ -99,12 +110,44 @@ class _ScannerScreenState extends State<ScannerScreen> {
       return;
     }
 
+    if (_isAnalyzing) return; // Prevent multiple scans
+
+    setState(() {
+      _isAnalyzing = true;
+    });
+
     try {
-      await _controller!.takePicture();
+      // Take picture
+      final XFile photo = await _controller!.takePicture();
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Image captured! Processing...'),
+            content: const Text('Analyzing image...'),
+            backgroundColor: AppColors.primaryGreen,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+
+      // Analyze with ML model
+      final diagnosisResult = await _mlService.analyzeImage(photo.path);
+      final sweetnessResult = await _mlService.predictSweetness(photo.path);
+
+      if (mounted) {
+        setState(() {
+          detectedDisease = diagnosisResult.disease;
+          confidence = diagnosisResult.confidence;
+          sweetnessLevel = sweetnessResult.level;
+          sweetnessName = sweetnessResult.levelName;
+          _isAnalyzing = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(diagnosisResult.isModelLoaded 
+              ? 'Analysis complete!' 
+              : 'Model not loaded - showing placeholder'),
             backgroundColor: AppColors.primaryGreen,
             duration: const Duration(seconds: 2),
           ),
@@ -112,9 +155,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error taking picture: $e'),
+            content: Text('Error: $e'),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 2),
           ),

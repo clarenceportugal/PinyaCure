@@ -38,6 +38,10 @@ dependencies:
   # Camera package for live camera feed
   camera: ^0.11.0+2
   permission_handler: ^11.3.1
+  
+  # TensorFlow Lite for ML inference
+  tflite_flutter: ^0.11.0
+  image: ^4.3.0
 
 dev_dependencies:
   flutter_test:
@@ -65,6 +69,7 @@ flutter:
   assets:
     - assets/logo/
     - assets/images/
+    - assets/models/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
