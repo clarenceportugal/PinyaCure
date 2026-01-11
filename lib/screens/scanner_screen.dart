@@ -342,7 +342,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
         border: Border.all(color: AppColors.getCardBorderColor(context)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.08),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.primaryGreen.withOpacity(0.2)
+                : AppColors.primaryGreen.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -449,7 +451,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
         border: Border.all(color: AppColors.getCardBorderColor(context)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.accentYellow.withOpacity(0.1),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.accentYellow.withOpacity(0.25)
+                : AppColors.accentYellow.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -495,7 +499,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: AppColors.getShadowColor(context),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),

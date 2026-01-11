@@ -28,7 +28,7 @@ class TreatmentScreen extends StatelessWidget {
                 color: AppColors.getCardColor(context),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: AppColors.getLightShadowColor(context),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -270,7 +270,7 @@ class TreatmentScreen extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: AppColors.getLightShadowColor(context),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

@@ -58,7 +58,9 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> {
                         border: Border.all(color: AppColors.getCardBorderColor(context)),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryGreen.withOpacity(0.05),
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? AppColors.primaryGreen.withOpacity(0.2)
+                                : AppColors.primaryGreen.withOpacity(0.05),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -159,12 +161,14 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.getCardBorderColor(context)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.08),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.primaryGreen.withOpacity(0.2)
+                : AppColors.primaryGreen.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

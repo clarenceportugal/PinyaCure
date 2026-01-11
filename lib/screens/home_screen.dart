@@ -141,7 +141,9 @@ class HomeScreen extends StatelessWidget {
         border: Border.all(color: AppColors.getCardBorderColor(context)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.08),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.primaryGreen.withOpacity(0.2)
+                : AppColors.primaryGreen.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -183,12 +185,12 @@ class HomeScreen extends StatelessWidget {
               gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Text(
+            child: Text(
               'Organization Title',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: Colors.white, // White text on gradient background
               ),
               textAlign: TextAlign.center,
             ),

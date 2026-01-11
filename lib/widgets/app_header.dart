@@ -20,9 +20,7 @@ class AppHeader extends StatelessWidget {
         color: AppColors.getCardColor(context),
         boxShadow: [
           BoxShadow(
-            color: isDark 
-                ? Colors.black.withOpacity(0.3)
-                : Colors.black.withOpacity(0.05),
+            color: AppColors.getLightShadowColor(context),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -42,9 +40,7 @@ class AppHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark
-                            ? Colors.black.withOpacity(0.5)
-                            : Colors.black.withOpacity(0.1),
+                        color: AppColors.getShadowColor(context),
                         blurRadius: 2,
                         offset: const Offset(0, 1),
                       ),
@@ -61,9 +57,9 @@ class AppHeader extends StatelessWidget {
                           color: AppColors.primaryGreenLight,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.eco_rounded,
-                          color: Colors.white,
+                          color: isDark ? AppColors.primaryGreenLight : Colors.white,
                           size: 24,
                         ),
                       );
@@ -109,9 +105,7 @@ class AppHeader extends StatelessWidget {
             IconButton(
               icon: Icon(
                 Icons.headphones_outlined,
-                color: isDark 
-                    ? AppColors.textDarkLight 
-                    : Colors.black87,
+                color: AppColors.getTextColor(context),
                 size: 24,
               ),
               onPressed: () {

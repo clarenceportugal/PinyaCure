@@ -35,8 +35,8 @@ class AppColors {
   static const Color textDarkLight = Color(0xFFE0E0E0);
   static const Color textDarkMedium = Color(0xFFB0B0B0);
   static const Color textDarkLightMode = Color(0xFF757575);
-  static const Color dividerDark = Color(0xFF2C2C2C);
-  static const Color cardBorderDark = Color(0xFF2C2C2C);
+  static const Color dividerDark = Color(0xFF3C3C3C); // More visible in dark mode
+  static const Color cardBorderDark = Color(0xFF3C3C3C); // More visible in dark mode
 
   // Theme-aware color getters
   static Color getBackgroundColor(BuildContext context) {
@@ -79,6 +79,19 @@ class AppColors {
     return Theme.of(context).brightness == Brightness.dark
         ? cardBorderDark
         : cardBorder;
+  }
+
+  // Shadow colors - theme-aware
+  static Color getShadowColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.black.withOpacity(0.5)
+        : Colors.black.withOpacity(0.1);
+  }
+
+  static Color getLightShadowColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? Colors.black.withOpacity(0.3)
+        : Colors.black.withOpacity(0.05);
   }
   
   // Status Colors
