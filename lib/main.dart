@@ -129,14 +129,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             // Floating circle for selected item
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutBack,
+              curve: Curves.easeOut,
               top: isSelected ? -28 : 8,
               left: 0,
               right: 0,
               child: Center(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutBack,
+                child: Container(
                   width: isSelected ? 46 : 32,
                   height: isSelected ? 46 : 32,
                   decoration: BoxDecoration(
@@ -152,14 +150,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                           ]
                         : null,
                   ),
-                  child: AnimatedScale(
-                    duration: const Duration(milliseconds: 200),
-                    scale: isSelected ? 1.0 : 0.9,
-                    child: Icon(
-                      icon,
-                      color: isSelected ? AppColors.primaryGreen : Colors.white.withOpacity(0.6),
-                      size: isSelected ? 24 : 20,
-                    ),
+                  child: Icon(
+                    icon,
+                    color: isSelected ? AppColors.primaryGreen : Colors.white.withOpacity(0.6),
+                    size: isSelected ? 24 : 20,
                   ),
                 ),
               ),
