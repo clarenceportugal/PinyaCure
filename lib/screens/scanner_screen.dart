@@ -179,7 +179,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
+      backgroundColor: AppColors.getBackgroundColor(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -225,7 +225,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         width: double.infinity,
         margin: const EdgeInsets.only(top: 8),
         decoration: BoxDecoration(
-          color: AppColors.divider,
+          color: AppColors.getDividerColor(context),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Center(
@@ -241,7 +241,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         width: double.infinity,
         margin: const EdgeInsets.only(top: 8),
         decoration: BoxDecoration(
-          color: AppColors.divider,
+          color: AppColors.getDividerColor(context),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
@@ -251,12 +251,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
               Icon(
                 Icons.camera_alt_outlined,
                 size: 48,
-                color: AppColors.textLight,
+                color: AppColors.getTextLightColor(context),
               ),
               const SizedBox(height: 12),
               Text(
                 'Camera permission required',
-                style: TextStyle(color: AppColors.textLight),
+                style: TextStyle(color: AppColors.getTextLightColor(context)),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
@@ -281,7 +281,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         width: double.infinity,
         margin: const EdgeInsets.only(top: 8),
         decoration: BoxDecoration(
-          color: AppColors.divider,
+          color: AppColors.getDividerColor(context),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
@@ -291,12 +291,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
               Icon(
                 Icons.camera_alt_outlined,
                 size: 48,
-                color: AppColors.textLight,
+                color: AppColors.getTextLightColor(context),
               ),
               const SizedBox(height: 12),
               Text(
                 'Tap to scan',
-                style: TextStyle(color: AppColors.textLight),
+                style: TextStyle(color: AppColors.getTextLightColor(context)),
               ),
             ],
           ),
@@ -337,9 +337,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.getCardBorderColor(context)),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryGreen.withOpacity(0.08),
@@ -379,7 +379,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
             ],
@@ -398,7 +398,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             '${confidence.toStringAsFixed(0)}% Confidence',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textMedium,
+              color: AppColors.getTextMediumColor(context),
             ),
           ),
           const SizedBox(height: 10),
@@ -444,9 +444,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.getCardBorderColor(context)),
         boxShadow: [
           BoxShadow(
             color: AppColors.accentYellow.withOpacity(0.1),
@@ -530,7 +530,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textMedium,
+                  color: AppColors.getTextMediumColor(context),
                 ),
               ),
               Text(
@@ -538,7 +538,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textMedium,
+                  color: AppColors.getTextMediumColor(context),
                 ),
               ),
               Text(
@@ -546,7 +546,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textMedium,
+                  color: AppColors.getTextMediumColor(context),
                 ),
               ),
               Text(
@@ -554,7 +554,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textMedium,
+                  color: AppColors.getTextMediumColor(context),
                 ),
               ),
             ],

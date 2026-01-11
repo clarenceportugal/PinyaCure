@@ -50,6 +50,46 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primaryGreen,
+          brightness: Brightness.dark,
+          primary: AppColors.primaryGreenLight,
+          secondary: AppColors.accentYellow,
+          tertiary: AppColors.accentBlue,
+          surface: AppColors.cardDark,
+        ),
+        useMaterial3: true,
+        scaffoldBackgroundColor: AppColors.backgroundDark,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: AppColors.cardDark,
+          foregroundColor: AppColors.primaryGreenLight,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 2,
+          color: AppColors.cardDark,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryGreenLight,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: AppColors.textDarkLight),
+          bodyMedium: TextStyle(color: AppColors.textDarkMedium),
+          bodySmall: TextStyle(color: AppColors.textDarkLightMode),
+        ),
+      ),
+      themeMode: ThemeMode.system, // Automatically follows system theme
       home: const MainNavigationScreen(),
     );
   }

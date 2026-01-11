@@ -13,13 +13,16 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.getCardColor(context),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: isDark 
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -35,16 +38,18 @@ class AppHeader extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark
+                            ? Colors.black.withOpacity(0.5)
+                            : Colors.black.withOpacity(0.1),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
@@ -67,7 +72,7 @@ class AppHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // PINYACURE text - PINYA on top, CURE below
+              // PINYACURE text - PINYA on top, CURE below (indented)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -82,26 +87,31 @@ class AppHeader extends StatelessWidget {
                       height: 1.0,
                     ),
                   ),
-                  const Text(
-                    'CURE',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.accentYellow, // Bright yellow
-                      letterSpacing: 1.2,
-                      height: 1.0,
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8), // Indent to align C with I or N
+                    child: const Text(
+                      'CURE',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.accentYellow, // Bright yellow
+                        letterSpacing: 1.2,
+                        height: 1.0,
+                      ),
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          // Headphone icon (simple black outline)
+          // Headphone icon (theme-aware)
           if (showHeadphoneIcon)
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.headphones_outlined,
-                color: Colors.black87,
+                color: isDark 
+                    ? AppColors.textDarkLight 
+                    : Colors.black87,
                 size: 24,
               ),
               onPressed: () {

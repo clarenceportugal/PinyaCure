@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 
 /// PinyaCure App Color Palette
-/// Based on logo colors: Green, Yellow, Light Blue
+/// Extracted from logo: Vibrant Green (leaves), Golden Yellow (fruit), Light Blue (accent)
 class AppColors {
   AppColors._();
 
-  // Primary Colors
-  static const Color primaryGreen = Color(0xFF2E7D32);
-  static const Color primaryGreenLight = Color(0xFF4CAF50);
-  static const Color primaryGreenDark = Color(0xFF1B5E20);
+  // Primary Colors - Based on logo green (pineapple leaves)
+  static const Color primaryGreen = Color(0xFF2E7D32); // Main green from logo
+  static const Color primaryGreenLight = Color(0xFF4CAF50); // Lighter green variant
+  static const Color primaryGreenDark = Color(0xFF1B5E20); // Darker green for text/shadow
   
-  // Secondary Colors
-  static const Color accentYellow = Color(0xFFFFC107);
-  static const Color accentYellowLight = Color(0xFFFFE082);
-  static const Color accentYellowDark = Color(0xFFFFA000);
+  // Secondary Colors - Based on logo yellow (pineapple fruit)
+  static const Color accentYellow = Color(0xFFFFC107); // Bright golden yellow from logo
+  static const Color accentYellowLight = Color(0xFFFFE082); // Light yellow variant
+  static const Color accentYellowDark = Color(0xFFFFA000); // Darker yellow/amber
   
-  // Tertiary Colors
-  static const Color accentBlue = Color(0xFF64B5F6);
-  static const Color accentBlueLight = Color(0xFFBBDEFB);
-  static const Color accentBlueDark = Color(0xFF1976D2);
+  // Tertiary Colors - Based on logo light blue accent
+  static const Color accentBlue = Color(0xFF64B5F6); // Light blue from logo
+  static const Color accentBlueLight = Color(0xFFBBDEFB); // Pale blue variant
+  static const Color accentBlueDark = Color(0xFF1976D2); // Deeper blue
   
-  // Neutral Colors
+  // Neutral Colors - Light Mode
   static const Color backgroundWhite = Color(0xFFFAFAFA);
   static const Color cardWhite = Color(0xFFFFFFFF);
   static const Color textDark = Color(0xFF212121);
@@ -28,6 +28,58 @@ class AppColors {
   static const Color textLight = Color(0xFF9E9E9E);
   static const Color divider = Color(0xFFE0E0E0);
   static const Color cardBorder = Color(0xFFEEEEEE);
+
+  // Dark Mode Colors
+  static const Color backgroundDark = Color(0xFF121212);
+  static const Color cardDark = Color(0xFF1E1E1E);
+  static const Color textDarkLight = Color(0xFFE0E0E0);
+  static const Color textDarkMedium = Color(0xFFB0B0B0);
+  static const Color textDarkLightMode = Color(0xFF757575);
+  static const Color dividerDark = Color(0xFF2C2C2C);
+  static const Color cardBorderDark = Color(0xFF2C2C2C);
+
+  // Theme-aware color getters
+  static Color getBackgroundColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? backgroundDark
+        : backgroundWhite;
+  }
+
+  static Color getCardColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? cardDark
+        : cardWhite;
+  }
+
+  static Color getTextColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? textDarkLight
+        : textDark;
+  }
+
+  static Color getTextMediumColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? textDarkMedium
+        : textMedium;
+  }
+
+  static Color getTextLightColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? textDarkLightMode
+        : textLight;
+  }
+
+  static Color getDividerColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? dividerDark
+        : divider;
+  }
+
+  static Color getCardBorderColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? cardBorderDark
+        : cardBorder;
+  }
   
   // Status Colors
   static const Color success = Color(0xFF4CAF50);

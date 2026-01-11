@@ -17,7 +17,7 @@ class TreatmentScreen extends StatelessWidget {
     final disease = DiseaseTreatments.getDisease(diseaseName);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
+      backgroundColor: AppColors.getBackgroundColor(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -25,7 +25,7 @@ class TreatmentScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.cardWhite,
+                color: AppColors.getCardColor(context),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -57,13 +57,13 @@ class TreatmentScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Treatment Details',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                        color: AppColors.getTextColor(context),
                       ),
                     ),
                   ),
@@ -79,12 +79,13 @@ class TreatmentScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Disease Name & Severity Badge
-                    _buildDiseaseHeader(disease),
+                    _buildDiseaseHeader(context, disease),
                     
                     const SizedBox(height: 16),
                     
                     // Description
                     _buildSection(
+                      context,
                       'Description',
                       Icons.info_outline_rounded,
                       [disease.description],
@@ -95,6 +96,7 @@ class TreatmentScreen extends StatelessWidget {
                     if (disease.symptoms.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSection(
+                        context,
                         'Symptoms',
                         Icons.warning_amber_rounded,
                         disease.symptoms,
@@ -106,6 +108,7 @@ class TreatmentScreen extends StatelessWidget {
                     if (disease.causes.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSection(
+                        context,
                         'Causes',
                         Icons.bug_report_rounded,
                         disease.causes,
@@ -117,6 +120,7 @@ class TreatmentScreen extends StatelessWidget {
                     if (disease.treatments.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSection(
+                        context,
                         'Treatment',
                         Icons.medical_services_rounded,
                         disease.treatments,
@@ -129,6 +133,7 @@ class TreatmentScreen extends StatelessWidget {
                     if (disease.preventions.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSection(
+                        context,
                         'Prevention',
                         Icons.shield_rounded,
                         disease.preventions,
@@ -147,21 +152,21 @@ class TreatmentScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDiseaseHeader(DiseaseInfo disease) {
+  Widget _buildDiseaseHeader(BuildContext context, DiseaseInfo disease) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _getSeverityColor(disease.severity).withOpacity(0.1),
-            _getSeverityColor(disease.severity).withOpacity(0.05),
+            _getSeverityColor(context, disease.severity).withOpacity(0.1),
+            _getSeverityColor(context, disease.severity).withOpacity(0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _getSeverityColor(disease.severity).withOpacity(0.3),
+          color: _getSeverityColor(context, disease.severity).withOpacity(0.3),
         ),
       ),
       child: Column(
@@ -175,11 +180,11 @@ class TreatmentScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: _getSeverityColor(disease.severity),
+                    color: _getSeverityColor(context, disease.severity),
                   ),
                 ),
               ),
-              _buildSeverityBadge(disease.severity),
+              _buildSeverityBadge(context, disease.severity),
             ],
           ),
           if (confidence > 0) ...[
@@ -196,7 +201,7 @@ class TreatmentScreen extends StatelessWidget {
                   '${confidence.toStringAsFixed(1)}% Confidence',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textMedium,
+                    color: AppColors.getTextMediumColor(context),
                   ),
                 ),
               ],
@@ -207,11 +212,11 @@ class TreatmentScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSeverityBadge(String severity) {
+  Widget _buildSeverityBadge(BuildContext context, String severity) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _getSeverityColor(severity),
+        color: _getSeverityColor(context, severity),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -225,7 +230,7 @@ class TreatmentScreen extends StatelessWidget {
     );
   }
 
-  Color _getSeverityColor(String severity) {
+  Color _getSeverityColor(BuildContext context, String severity) {
     switch (severity.toLowerCase()) {
       case 'critical':
         return Colors.red.shade700;
@@ -238,11 +243,12 @@ class TreatmentScreen extends StatelessWidget {
       case 'none':
         return AppColors.accentBlue;
       default:
-        return AppColors.textMedium;
+        return AppColors.getTextMediumColor(context);
     }
   }
 
   Widget _buildSection(
+    BuildContext context,
     String title,
     IconData icon,
     List<String> items, {
@@ -255,12 +261,12 @@ class TreatmentScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isHighlighted
             ? AppColors.primaryGreen.withOpacity(0.05)
-            : AppColors.cardWhite,
+            : AppColors.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isHighlighted
               ? AppColors.primaryGreen.withOpacity(0.2)
-              : AppColors.cardBorder,
+              : AppColors.getCardBorderColor(context),
         ),
         boxShadow: [
           BoxShadow(
@@ -329,7 +335,7 @@ class TreatmentScreen extends StatelessWidget {
                           item,
                           style: TextStyle(
                             fontSize: 14,
-                            color: AppColors.textMedium,
+                            color: AppColors.getTextMediumColor(context),
                             height: 1.4,
                           ),
                         ),

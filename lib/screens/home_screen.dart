@@ -8,7 +8,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
+      backgroundColor: AppColors.getBackgroundColor(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -47,7 +47,7 @@ class HomeScreen extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: AppColors.textLight,
+                                      color: AppColors.getTextLightColor(context),
                                     ),
                                   ),
                                 ],
@@ -66,7 +66,7 @@ class HomeScreen extends StatelessWidget {
                           'Pineapple (Ananas comosus) is a tropical fruit native to South America belonging to the Bromeliad family, instantly recognizable by its tough, spiky skin made of hexagonal "eyes" and a crown of stiff green leaves. Inside, the fruit offers juicy, bright yellow flesh with a vibrant sweet-tart flavor that makes it popular in cuisines worldwide, whether eaten fresh, juiced, or cooked. Beyond its unique taste, it is nutritionally significant for being rich in Vitamin C and Manganese, and it is famous for containing bromelain, a unique enzyme mixture that aids in protein digestion and possesses anti-inflammatory properties.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textMedium,
+                            color: AppColors.getTextMediumColor(context),
                             height: 1.5,
                           ),
                           textAlign: TextAlign.justify,
@@ -74,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
 
                     // Organizations Section
                     Align(
@@ -84,7 +84,7 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
+                          color: AppColors.getTextColor(context),
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -97,11 +97,11 @@ class HomeScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Expanded(
-                            child: _buildOrganizationCard(),
+                            child: _buildOrganizationCard(context),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: _buildOrganizationCard(),
+                            child: _buildOrganizationCard(context),
                           ),
                         ],
                       ),
@@ -113,11 +113,11 @@ class HomeScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildDot(true),
+                        _buildDot(context, true),
                         const SizedBox(width: 8),
-                        _buildDot(false),
+                        _buildDot(context, false),
                         const SizedBox(width: 8),
-                        _buildDot(false),
+                        _buildDot(context, false),
                       ],
                     ),
 
@@ -132,13 +132,13 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOrganizationCard() {
+  Widget _buildOrganizationCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cardWhite,
+        color: AppColors.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.getCardBorderColor(context)),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryGreen.withOpacity(0.08),
@@ -198,13 +198,13 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDot(bool isActive) {
+  Widget _buildDot(BuildContext context, bool isActive) {
     return Container(
       width: 8,
       height: 8,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isActive ? AppColors.primaryGreen : AppColors.divider,
+        color: isActive ? AppColors.primaryGreen : AppColors.getDividerColor(context),
       ),
     );
   }

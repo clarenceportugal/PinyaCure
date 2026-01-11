@@ -40,7 +40,7 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundWhite,
+      backgroundColor: AppColors.getBackgroundColor(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -53,9 +53,9 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.cardWhite,
+                        color: AppColors.getCardColor(context),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.cardBorder),
+                        border: Border.all(color: AppColors.getCardBorderColor(context)),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.primaryGreen.withOpacity(0.05),
@@ -74,7 +74,7 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> {
                         decoration: InputDecoration(
                           hintText: 'Search disease',
                           hintStyle: TextStyle(
-                            color: AppColors.textLight,
+                            color: AppColors.getTextLightColor(context),
                             fontSize: 14,
                           ),
                           prefixIcon: Icon(
@@ -85,7 +85,7 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> {
                               ? IconButton(
                                   icon: Icon(
                                     Icons.clear_rounded,
-                                    color: AppColors.textLight,
+                                    color: AppColors.getTextLightColor(context),
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -117,14 +117,14 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> {
                                 Icon(
                                   Icons.search_off_rounded,
                                   size: 64,
-                                  color: AppColors.textLight,
+                                  color: AppColors.getTextLightColor(context),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'No diseases found',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: AppColors.textMedium,
+                                    color: AppColors.getTextMediumColor(context),
                                   ),
                                 ),
                               ],
@@ -335,7 +335,7 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> {
       case 'none':
         return AppColors.accentBlue;
       default:
-        return AppColors.textMedium;
+        return AppColors.getTextMediumColor(context);
     }
   }
 }
