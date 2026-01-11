@@ -67,32 +67,32 @@ class AppHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // PINYACURE text - matching image exactly
-              RichText(
-                text: const TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'PINYA',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryGreenDark, // Dark green
-                        letterSpacing: 1.2,
-                        height: 1.0,
-                      ),
+              // PINYACURE text - PINYA on top, CURE below
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'PINYA',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryGreenDark, // Dark green
+                      letterSpacing: 1.2,
+                      height: 1.0,
                     ),
-                    TextSpan(
-                      text: 'CURE',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.accentYellow, // Bright yellow
-                        letterSpacing: 1.2,
-                        height: 1.0,
-                      ),
+                  ),
+                  const Text(
+                    'CURE',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.accentYellow, // Bright yellow
+                      letterSpacing: 1.2,
+                      height: 1.0,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
