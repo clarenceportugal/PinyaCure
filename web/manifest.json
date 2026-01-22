@@ -6,6 +6,8 @@
     "description": "PinyaCure - Plant Disease Detection App",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
     "icons": [
         {
             "src": "icons/Icon-192.png",

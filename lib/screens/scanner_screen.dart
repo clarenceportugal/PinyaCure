@@ -5,7 +5,10 @@ import 'package:permission_handler/permission_handler.dart';
 import '../widgets/app_header.dart';
 import '../constants/app_colors.dart';
 import '../services/ml_service.dart';
+import '../services/history_service.dart';
+import '../data/nutrient_deficiencies.dart';
 import 'treatment_screen.dart';
+import 'nutrient_deficiency_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -23,13 +26,20 @@ class _ScannerScreenState extends State<ScannerScreen> {
   bool _isAnalyzing = false;
 
   // Scan results - will be updated by ML model
-  String detectedDisease = 'Tap camera to scan';
+  String detectedDisease = 'Pindutin ang camera para mag-scan';
+  bool _hasScanned = false;
   double confidence = 0.0;
-  String sweetnessLevel = 'M3';
-  String sweetnessName = 'Sweet';
+  String? sweetnessLevel;
+  String? sweetnessName;
+  
+  // Nutrient deficiency results
+  String? nutrientDeficiency;
+  String? nutrientDeficiencyName;
+  double nutrientConfidence = 0.0;
 
   // ML Service
   final MLService _mlService = MLService.instance;
+  final HistoryService _historyService = HistoryService.instance;
 
   @override
   void initState() {
@@ -69,16 +79,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
         return;
       }
 
-      // Find the back camera (main 1x camera)
       CameraDescription? backCamera;
       for (final camera in _cameras!) {
         if (camera.lensDirection == CameraLensDirection.back) {
           backCamera = camera;
-          break; // Use the first back camera (usually the main 1x camera)
+          break;
         }
       }
 
-      // If no back camera found, use the first available camera
       final selectedCamera = backCamera ?? _cameras!.first;
 
       _controller = CameraController(
@@ -111,29 +119,29 @@ class _ScannerScreenState extends State<ScannerScreen> {
       return;
     }
 
-    if (_isAnalyzing) return; // Prevent multiple scans
+    if (_isAnalyzing) return;
 
     setState(() {
       _isAnalyzing = true;
     });
 
     try {
-      // Take picture
       final XFile photo = await _controller!.takePicture();
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Analyzing image...'),
+            content: const Text('Sinusuri ang larawan...'),
             backgroundColor: AppColors.primaryGreen,
             duration: const Duration(seconds: 1),
           ),
         );
       }
 
-      // Analyze with ML model
+      // Analyze with ML models
       final diagnosisResult = await _mlService.analyzeImage(photo.path);
       final sweetnessResult = await _mlService.predictSweetness(photo.path);
+      final nutrientResult = await _mlService.predictNutrientDeficiency(photo.path);
 
       if (mounted) {
         setState(() {
@@ -141,14 +149,34 @@ class _ScannerScreenState extends State<ScannerScreen> {
           confidence = diagnosisResult.confidence;
           sweetnessLevel = sweetnessResult.level;
           sweetnessName = sweetnessResult.levelName;
+          nutrientDeficiency = nutrientResult.deficiency;
+          nutrientDeficiencyName = nutrientResult.deficiencyName;
+          nutrientConfidence = nutrientResult.confidence;
           _isAnalyzing = false;
+          _hasScanned = true;
         });
+
+        // Save to history
+        await _historyService.saveScan(
+          ScanHistoryItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            disease: diagnosisResult.disease,
+            confidence: diagnosisResult.confidence,
+            sweetnessLevel: sweetnessResult.level,
+            sweetnessName: sweetnessResult.levelName,
+            nutrientDeficiency: nutrientResult.deficiency,
+            nutrientDeficiencyName: nutrientResult.deficiencyName,
+            nutrientConfidence: nutrientResult.confidence,
+            imagePath: photo.path,
+            timestamp: DateTime.now(),
+          ),
+        );
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(diagnosisResult.isModelLoaded 
-              ? 'Analysis complete!' 
-              : 'Model not loaded - showing placeholder'),
+              ? 'Tapos na ang pagsusuri!' 
+              : 'Hindi na-load ang modelo - placeholder lamang'),
             backgroundColor: AppColors.primaryGreen,
             duration: const Duration(seconds: 2),
           ),
@@ -179,19 +207,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.getBackgroundColor(context),
+      backgroundColor: AppColors.backgroundWhite,
       body: SafeArea(
         child: Column(
           children: [
-            const AppHeader(title: 'SCANNER'),
+            const AppHeader(title: 'I-SCAN'),
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
                     // Camera Preview Area
-                    Expanded(
-                      flex: 5,
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.35,
                       child: GestureDetector(
                         onTap: _takePicture,
                         child: _buildCameraContainer(),
@@ -205,10 +233,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
                     const SizedBox(height: 8),
 
+                    // Nutrient Deficiency Card
+                    _buildNutrientCard(),
+
+                    const SizedBox(height: 8),
+
                     // Sweetness Level Card
                     _buildSweetnessCard(),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -225,7 +258,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         width: double.infinity,
         margin: const EdgeInsets.only(top: 8),
         decoration: BoxDecoration(
-          color: AppColors.getDividerColor(context),
+          color: AppColors.divider,
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Center(
@@ -241,7 +274,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         width: double.infinity,
         margin: const EdgeInsets.only(top: 8),
         decoration: BoxDecoration(
-          color: AppColors.getDividerColor(context),
+          color: AppColors.divider,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
@@ -251,12 +284,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
               Icon(
                 Icons.camera_alt_outlined,
                 size: 48,
-                color: AppColors.getTextLightColor(context),
+                color: AppColors.textLight,
               ),
               const SizedBox(height: 12),
               Text(
-                'Camera permission required',
-                style: TextStyle(color: AppColors.getTextLightColor(context)),
+                'Kailangan ang pahintulot sa camera',
+                style: TextStyle(color: AppColors.textLight),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
@@ -268,7 +301,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Open Settings'),
+                child: const Text('Buksan ang Settings'),
               ),
             ],
           ),
@@ -281,7 +314,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         width: double.infinity,
         margin: const EdgeInsets.only(top: 8),
         decoration: BoxDecoration(
-          color: AppColors.getDividerColor(context),
+          color: AppColors.divider,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
@@ -291,12 +324,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
               Icon(
                 Icons.camera_alt_outlined,
                 size: 48,
-                color: AppColors.getTextLightColor(context),
+                color: AppColors.textLight,
               ),
               const SizedBox(height: 12),
               Text(
-                'Tap to scan',
-                style: TextStyle(color: AppColors.getTextLightColor(context)),
+                'Pindutin para mag-scan',
+                style: TextStyle(color: AppColors.textLight),
               ),
             ],
           ),
@@ -304,7 +337,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
       );
     }
 
-    // Camera is initialized - show with 1:1 aspect ratio (square)
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 8),
@@ -337,14 +369,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.getCardColor(context),
+        color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.getCardBorderColor(context)),
+        border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.primaryGreen.withOpacity(0.2)
-                : AppColors.primaryGreen.withOpacity(0.08),
+            color: AppColors.primaryGreen.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -353,42 +383,34 @@ class _ScannerScreenState extends State<ScannerScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title with pineapple icon
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.accentYellowLight.withOpacity(0.5),
+                  color: AppColors.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Image.asset(
-                  'assets/logo/pinyacure_logo.png',
-                  width: 18,
-                  height: 18,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.eco_rounded,
-                      color: AppColors.primaryGreen,
-                      size: 18,
-                    );
-                  },
+                child: Icon(
+                  Icons.bug_report_rounded,
+                  color: AppColors.error,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: 8),
               Text(
-                'Diagnosis Summary',
+                'Pagsusuri ng Sakit',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.getTextColor(context),
+                  color: AppColors.textDark,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Detected: $detectedDisease',
+            'Natukoy: $detectedDisease',
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -397,14 +419,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${confidence.toStringAsFixed(0)}% Confidence',
+            '${confidence.toStringAsFixed(0)}% Katiyakan',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.getTextMediumColor(context),
+              color: AppColors.textMedium,
             ),
           ),
           const SizedBox(height: 10),
-          // View Treatment Button
           GestureDetector(
             onTap: () => _openTreatmentScreen(context),
             child: Container(
@@ -421,7 +442,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'View Treatment',
+                    'Tingnan ang Gamot',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -442,18 +463,18 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _buildSweetnessCard() {
+  Widget _buildNutrientCard() {
+    final hasDeficiency = nutrientDeficiency != null && nutrientDeficiency!.isNotEmpty;
+    
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
       decoration: BoxDecoration(
-        color: AppColors.getCardColor(context),
+        color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.getCardBorderColor(context)),
+        border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.accentYellow.withOpacity(0.25)
-                : AppColors.accentYellow.withOpacity(0.1),
+            color: AppColors.accentBlue.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -462,105 +483,257 @@ class _ScannerScreenState extends State<ScannerScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Sweetness Level',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Gradient Bar with Pineapple Icon
-          Stack(
-            clipBehavior: Clip.none,
+          Row(
             children: [
-              // Gradient Bar
               Container(
-                width: double.infinity,
-                height: 20,
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: AppColors.sweetnessGradient,
+                  color: AppColors.accentBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.eco_rounded,
+                  color: AppColors.accentBlue,
+                  size: 18,
                 ),
               ),
-              // Pineapple Icon above M3
-              Positioned(
-                top: -20,
-                left: 0,
-                right: 0,
-                child: Row(
-                  children: [
-                    const Expanded(flex: 2, child: SizedBox()),
-                    Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardWhite,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.getShadowColor(context),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Image.asset(
-                        'assets/logo/pinyacure_logo.png',
-                        width: 22,
-                        height: 22,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.eco_rounded,
-                            color: AppColors.primaryGreen,
-                            size: 22,
-                          );
-                        },
-                      ),
-                    ),
-                    const Expanded(flex: 1, child: SizedBox()),
-                  ],
+              const SizedBox(width: 8),
+              Text(
+                'Kakulangan sa Nutrient',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Nutrient status bar (similar to sweetness)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Gradient Bar - Green to Orange to Red
+                  Container(
+                    width: double.infinity,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primaryGreen,
+                          AppColors.primaryGreenLight,
+                          Colors.orange.shade300,
+                          Colors.orange.shade500,
+                          Colors.red.shade400,
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Indicator icon - only show when there's a scan result
+                  if (nutrientDeficiencyName != null)
+                    Positioned(
+                      top: -20,
+                      left: _getNutrientPosition(hasDeficiency, constraints.maxWidth),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardWhite,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          hasDeficiency ? Icons.warning_rounded : Icons.check_circle_rounded,
+                          color: hasDeficiency ? Colors.orange.shade700 : AppColors.primaryGreen,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 8),
           // Labels
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'M1',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.getTextMediumColor(context),
+              Text('Malusog', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+              Text('Bahagya', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+              Text('Malubha', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Status text
+          Center(
+            child: GestureDetector(
+              onTap: hasDeficiency ? () => _openNutrientScreen(context) : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: nutrientDeficiencyName == null
+                      ? AppColors.divider
+                      : hasDeficiency
+                          ? Colors.orange.shade100
+                          : AppColors.primaryGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      nutrientDeficiencyName == null
+                          ? 'Mag-scan para suriin'
+                          : hasDeficiency
+                              ? '$nutrientDeficiencyName'
+                              : 'Walang Kakulangan - Malusog!',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: nutrientDeficiencyName == null
+                            ? AppColors.textLight
+                            : hasDeficiency
+                                ? Colors.orange.shade700
+                                : AppColors.primaryGreen,
+                      ),
+                    ),
+                    if (hasDeficiency) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 12,
+                        color: Colors.orange.shade700,
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              Text(
-                'M2',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.getTextMediumColor(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _getNutrientPosition(bool hasDeficiency, double containerWidth) {
+    // If no deficiency (healthy) - position at left (green area)
+    // If has deficiency - position at middle-right (orange/red area)
+    if (!hasDeficiency) {
+      return (containerWidth * 0.1) - 11; // 10% from left
+    } else {
+      return (containerWidth * 0.7) - 11; // 70% from left (orange area)
+    }
+  }
+
+  Widget _buildSweetnessCard() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      decoration: BoxDecoration(
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accentYellow.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.accentYellowLight.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.star_rounded,
+                  color: AppColors.accentYellowDark,
+                  size: 18,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
-                'M3',
+                'Antas ng Tamis',
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.getTextMediumColor(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
                 ),
               ),
-              Text(
-                'M4',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.getTextMediumColor(context),
-                ),
-              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      gradient: AppColors.sweetnessGradient,
+                    ),
+                  ),
+                  if (sweetnessLevel != null)
+                    Positioned(
+                      top: -20,
+                      left: _getSweetnessPosition(sweetnessLevel!, constraints.maxWidth),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardWhite,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/logo/pinyacure_logo.png',
+                          width: 22,
+                          height: 22,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.eco_rounded,
+                              color: AppColors.primaryGreen,
+                              size: 22,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('M1', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+              Text('M2', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+              Text('M3', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+              Text('M4', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
             ],
           ),
           const SizedBox(height: 8),
@@ -568,15 +741,21 @@ class _ScannerScreenState extends State<ScannerScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.accentYellowLight.withOpacity(0.5),
+                color: sweetnessLevel != null 
+                    ? AppColors.accentYellowLight.withOpacity(0.5)
+                    : AppColors.divider,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'Sweetness: ${_getSweetnessText(sweetnessLevel)} ($sweetnessLevel)',
+                sweetnessLevel != null 
+                    ? 'Tamis: ${_getSweetnessText(sweetnessLevel!)} ($sweetnessLevel)'
+                    : 'Mag-scan para malaman ang tamis',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.accentYellowDark,
+                  color: sweetnessLevel != null 
+                      ? AppColors.accentYellowDark
+                      : AppColors.textLight,
                 ),
               ),
             ),
@@ -597,13 +776,39 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
+  void _openNutrientScreen(BuildContext context) {
+    if (nutrientDeficiency == null) return;
+    
+    final deficiencyInfo = NutrientDeficiencies.getDeficiency(nutrientDeficiency!);
+    if (deficiencyInfo != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => NutrientDeficiencyScreen(
+            deficiency: deficiencyInfo,
+          ),
+        ),
+      );
+    }
+  }
+
   String _getSweetnessText(String level) {
     final texts = {
-      'M1': 'Mild',
-      'M2': 'Moderate',
-      'M3': 'Sweet',
-      'M4': 'Very Sweet',
+      'M1': 'Bahagya',
+      'M2': 'Katamtaman',
+      'M3': 'Matamis',
+      'M4': 'Sobrang Tamis',
     };
-    return texts[level] ?? 'Sweet';
+    return texts[level] ?? 'Matamis';
+  }
+
+  double _getSweetnessPosition(String level, double containerWidth) {
+    final positions = {
+      'M1': 0.125,
+      'M2': 0.375,
+      'M3': 0.625,
+      'M4': 0.875,
+    };
+    final percentage = positions[level] ?? 0.625;
+    return (containerWidth * percentage) - 11;
   }
 }

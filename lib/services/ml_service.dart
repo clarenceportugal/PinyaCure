@@ -7,8 +7,10 @@ class MLService {
   static MLService? _instance;
   Interpreter? _diseaseInterpreter;
   Interpreter? _sweetnessInterpreter;
+  Interpreter? _nutrientInterpreter;
   List<String> _diseaseLabels = [];
   List<String> _sweetnessLabels = [];
+  List<String> _nutrientLabels = [];
   bool _isInitialized = false;
 
   // Singleton pattern
@@ -20,6 +22,9 @@ class MLService {
   MLService._();
 
   bool get isInitialized => _isInitialized;
+  bool get isSweetnessModelLoaded => _sweetnessInterpreter != null;
+  bool get isDiseaseModelLoaded => _diseaseInterpreter != null;
+  bool get isNutrientModelLoaded => _nutrientInterpreter != null;
 
   /// Initialize the ML models
   Future<void> initialize() async {
@@ -31,6 +36,9 @@ class MLService {
       
       // Load sweetness prediction model
       await _loadSweetnessModel();
+      
+      // Load nutrient deficiency model
+      await _loadNutrientModel();
 
       _isInitialized = true;
       print('ML Service initialized successfully');
@@ -70,6 +78,28 @@ class MLService {
     }
   }
 
+  Future<void> _loadNutrientModel() async {
+    try {
+      _nutrientInterpreter = await Interpreter.fromAsset('models/nutrient_model.tflite');
+      _nutrientLabels = await _loadLabels('assets/models/labels_nutrient.txt');
+      print('Nutrient model loaded: ${_nutrientLabels.length} classes');
+    } catch (e) {
+      print('Nutrient model not found or error loading: $e');
+      // Use default labels if model not available
+      _nutrientLabels = [
+        'Walang Kakulangan',
+        'Nitrogen (N)',
+        'Phosphorus (P)',
+        'Potassium (K)',
+        'Iron (Fe)',
+        'Zinc (Zn)',
+        'Magnesium (Mg)',
+        'Calcium (Ca)',
+        'Boron (B)',
+      ];
+    }
+  }
+
   Future<List<String>> _loadLabels(String path) async {
     try {
       final labelsData = await rootBundle.loadString(path);
@@ -85,7 +115,7 @@ class MLService {
     if (_diseaseInterpreter == null) {
       // Return placeholder result if model not loaded
       return DiagnosisResult(
-        disease: 'Model not loaded',
+        disease: 'Hindi Na-load ang Modelo',
         confidence: 0.0,
         isModelLoaded: false,
       );
@@ -124,10 +154,10 @@ class MLService {
   /// Predict sweetness level from image
   Future<SweetnessResult> predictSweetness(String imagePath) async {
     if (_sweetnessInterpreter == null) {
-      // Return placeholder result if model not loaded
+      // Return null result if model not loaded
       return SweetnessResult(
-        level: 'M3',
-        levelName: 'Sweet',
+        level: null,
+        levelName: null,
         confidence: 0.0,
         isModelLoaded: false,
       );
@@ -156,8 +186,8 @@ class MLService {
     } catch (e) {
       print('Error during sweetness prediction: $e');
       return SweetnessResult(
-        level: 'M3',
-        levelName: 'Sweet',
+        level: null,
+        levelName: null,
         confidence: 0.0,
         isModelLoaded: true,
         error: e.toString(),
@@ -215,17 +245,88 @@ class MLService {
 
   String _getSweetnessName(String level) {
     final names = {
-      'M1': 'Mild',
-      'M2': 'Moderate',
-      'M3': 'Sweet',
-      'M4': 'Very Sweet',
+      'M1': 'Bahagya',
+      'M2': 'Katamtaman',
+      'M3': 'Matamis',
+      'M4': 'Sobrang Tamis',
     };
-    return names[level] ?? 'Unknown';
+    return names[level] ?? 'Hindi Alam';
+  }
+
+  /// Predict nutrient deficiency from image
+  Future<NutrientResult> predictNutrientDeficiency(String imagePath) async {
+    if (_nutrientInterpreter == null) {
+      // Return placeholder result if model not loaded (simulate for demo)
+      // In production, this would return null/error
+      return NutrientResult(
+        deficiency: null,
+        deficiencyName: null,
+        confidence: 0.0,
+        isModelLoaded: false,
+      );
+    }
+
+    try {
+      // Load and preprocess image
+      final imageData = await _preprocessImage(imagePath);
+      
+      // Run inference
+      final output = List.filled(1 * _nutrientLabels.length, 0.0).reshape([1, _nutrientLabels.length]);
+      _nutrientInterpreter!.run(imageData, output);
+      
+      // Get prediction
+      final predictions = output[0] as List<double>;
+      final maxIndex = _getMaxIndex(predictions);
+      final confidence = predictions[maxIndex] * 100;
+      final deficiency = _nutrientLabels[maxIndex];
+      
+      // If healthy/no deficiency
+      if (deficiency == 'Walang Kakulangan' || maxIndex == 0) {
+        return NutrientResult(
+          deficiency: null,
+          deficiencyName: 'Walang Kakulangan',
+          confidence: confidence,
+          isModelLoaded: true,
+        );
+      }
+      
+      return NutrientResult(
+        deficiency: deficiency,
+        deficiencyName: _getNutrientDeficiencyName(deficiency),
+        confidence: confidence,
+        isModelLoaded: true,
+      );
+    } catch (e) {
+      print('Error during nutrient analysis: $e');
+      return NutrientResult(
+        deficiency: null,
+        deficiencyName: null,
+        confidence: 0.0,
+        isModelLoaded: true,
+        error: e.toString(),
+      );
+    }
+  }
+
+  String _getNutrientDeficiencyName(String nutrient) {
+    final names = {
+      'Walang Kakulangan': 'Walang Kakulangan',
+      'Nitrogen (N)': 'Kakulangan sa Nitrogen',
+      'Phosphorus (P)': 'Kakulangan sa Phosphorus',
+      'Potassium (K)': 'Kakulangan sa Potassium',
+      'Iron (Fe)': 'Kakulangan sa Iron',
+      'Zinc (Zn)': 'Kakulangan sa Zinc',
+      'Magnesium (Mg)': 'Kakulangan sa Magnesium',
+      'Calcium (Ca)': 'Kakulangan sa Calcium',
+      'Boron (B)': 'Kakulangan sa Boron',
+    };
+    return names[nutrient] ?? nutrient;
   }
 
   void dispose() {
     _diseaseInterpreter?.close();
     _sweetnessInterpreter?.close();
+    _nutrientInterpreter?.close();
     _isInitialized = false;
   }
 }
@@ -249,15 +350,32 @@ class DiagnosisResult {
 
 /// Result class for sweetness prediction
 class SweetnessResult {
-  final String level;
-  final String levelName;
+  final String? level;
+  final String? levelName;
   final double confidence;
   final bool isModelLoaded;
   final String? error;
 
   SweetnessResult({
-    required this.level,
-    required this.levelName,
+    this.level,
+    this.levelName,
+    required this.confidence,
+    required this.isModelLoaded,
+    this.error,
+  });
+}
+
+/// Result class for nutrient deficiency prediction
+class NutrientResult {
+  final String? deficiency;
+  final String? deficiencyName;
+  final double confidence;
+  final bool isModelLoaded;
+  final String? error;
+
+  NutrientResult({
+    this.deficiency,
+    this.deficiencyName,
     required this.confidence,
     required this.isModelLoaded,
     this.error,

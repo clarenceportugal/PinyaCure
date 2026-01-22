@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../data/disease_treatments.dart';
+import '../data/nutrient_deficiencies.dart';
 
-class TreatmentScreen extends StatelessWidget {
-  final String diseaseName;
-  final double confidence;
+class NutrientDeficiencyScreen extends StatelessWidget {
+  final NutrientDeficiencyInfo deficiency;
 
-  const TreatmentScreen({
+  const NutrientDeficiencyScreen({
     super.key,
-    required this.diseaseName,
-    required this.confidence,
+    required this.deficiency,
   });
 
   @override
   Widget build(BuildContext context) {
-    final disease = DiseaseTreatments.getDisease(diseaseName);
-
     return Scaffold(
       backgroundColor: AppColors.backgroundWhite,
       body: SafeArea(
@@ -44,22 +40,22 @@ class TreatmentScreen extends StatelessWidget {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   const SizedBox(width: 8),
-                  Image.asset(
-                    'assets/logo/pinyacure_logo.png',
-                    width: 32,
-                    height: 32,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.eco_rounded,
-                        color: AppColors.primaryGreen,
-                        size: 32,
-                      );
-                    },
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentYellowLight.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.eco_rounded,
+                      color: AppColors.accentYellowDark,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'Detalye ng Gamot',
+                      'Detalye ng Kakulangan',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -78,8 +74,8 @@ class TreatmentScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Disease Name & Severity Badge
-                    _buildDiseaseHeader(disease),
+                    // Deficiency Name & Severity Badge
+                    _buildDeficiencyHeader(),
                     
                     const SizedBox(height: 16),
                     
@@ -87,51 +83,51 @@ class TreatmentScreen extends StatelessWidget {
                     _buildSection(
                       'Paglalarawan',
                       Icons.info_outline_rounded,
-                      [disease.description],
+                      [deficiency.description],
                       isDescription: true,
                     ),
                     
                     // Symptoms
-                    if (disease.symptoms.isNotEmpty) ...[
+                    if (deficiency.symptoms.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSection(
                         'Mga Sintomas',
                         Icons.warning_amber_rounded,
-                        disease.symptoms,
+                        deficiency.symptoms,
                         iconColor: AppColors.accentYellowDark,
                       ),
                     ],
                     
                     // Causes
-                    if (disease.causes.isNotEmpty) ...[
+                    if (deficiency.causes.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSection(
                         'Mga Sanhi',
-                        Icons.bug_report_rounded,
-                        disease.causes,
+                        Icons.help_outline_rounded,
+                        deficiency.causes,
                         iconColor: AppColors.error,
                       ),
                     ],
                     
                     // Treatments
-                    if (disease.treatments.isNotEmpty) ...[
+                    if (deficiency.treatments.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSection(
                         'Gamot/Lunas',
                         Icons.medical_services_rounded,
-                        disease.treatments,
+                        deficiency.treatments,
                         iconColor: AppColors.primaryGreen,
                         isHighlighted: true,
                       ),
                     ],
                     
                     // Prevention
-                    if (disease.preventions.isNotEmpty) ...[
+                    if (deficiency.preventions.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       _buildSection(
                         'Pag-iwas',
                         Icons.shield_rounded,
-                        disease.preventions,
+                        deficiency.preventions,
                         iconColor: AppColors.accentBlue,
                       ),
                     ],
@@ -147,21 +143,21 @@ class TreatmentScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDiseaseHeader(DiseaseInfo disease) {
+  Widget _buildDeficiencyHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _getSeverityColor(disease.severity).withOpacity(0.1),
-            _getSeverityColor(disease.severity).withOpacity(0.05),
+            _getSeverityColor(deficiency.severity).withOpacity(0.1),
+            _getSeverityColor(deficiency.severity).withOpacity(0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _getSeverityColor(disease.severity).withOpacity(0.3),
+          color: _getSeverityColor(deficiency.severity).withOpacity(0.3),
         ),
       ),
       child: Column(
@@ -171,37 +167,44 @@ class TreatmentScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  disease.name,
+                  deficiency.name,
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: _getSeverityColor(disease.severity),
+                    color: _getSeverityColor(deficiency.severity),
                   ),
                 ),
               ),
-              _buildSeverityBadge(disease.severity),
+              _buildSeverityBadge(deficiency.severity),
             ],
           ),
-          if (confidence > 0) ...[
-            const SizedBox(height: 8),
-            Row(
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.accentYellowLight.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.analytics_rounded,
-                  size: 16,
-                  color: AppColors.textMedium,
+                  Icons.science_rounded,
+                  size: 14,
+                  color: AppColors.accentYellowDark,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${confidence.toStringAsFixed(1)}% Katiyakan',
+                  'Nutrient: ${deficiency.nutrient}',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textMedium,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.accentYellowDark,
                   ),
                 ),
               ],
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -227,16 +230,12 @@ class TreatmentScreen extends StatelessWidget {
 
   Color _getSeverityColor(String severity) {
     switch (severity.toLowerCase()) {
-      case 'critical':
+      case 'malubha':
         return Colors.red.shade700;
-      case 'high':
+      case 'katamtaman':
         return Colors.orange.shade700;
-      case 'medium':
-        return Colors.amber.shade700;
-      case 'low':
+      case 'banayad':
         return AppColors.primaryGreen;
-      case 'none':
-        return AppColors.accentBlue;
       default:
         return AppColors.textMedium;
     }

@@ -2,17 +2,61 @@ import 'package:flutter/material.dart';
 import '../widgets/app_header.dart';
 import '../constants/app_colors.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  // Sample organizations list
+  final List<Map<String, String>> _organizations = [
+    {
+      'name': 'Kagawaran ng Agrikultura',
+      'logo': 'DA',
+    },
+    {
+      'name': 'Bureau of Plant Industry',
+      'logo': 'BPI',
+    },
+    {
+      'name': 'Philippine Council for Agriculture',
+      'logo': 'PCA',
+    },
+    {
+      'name': 'Agricultural Training Institute',
+      'logo': 'ATI',
+    },
+    {
+      'name': 'Lokal na Pamahalaan',
+      'logo': 'LGU',
+    },
+    {
+      'name': 'Kooperatiba ng mga Magsasaka',
+      'logo': 'FC',
+    },
+  ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  int get _totalPages => (_organizations.length / 2).ceil();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.getBackgroundColor(context),
+      backgroundColor: AppColors.backgroundWhite,
       body: SafeArea(
         child: Column(
           children: [
-            const AppHeader(title: 'HOME'),
+            const AppHeader(title: 'TAHANAN'),
             // Main Content - No scroll, fit everything
             Expanded(
               child: Padding(
@@ -43,11 +87,11 @@ class HomeScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Pineapple Plant Illustration',
+                                    'Larawan ng Halaman ng Pinya',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: AppColors.getTextLightColor(context),
+                                      color: AppColors.textLight,
                                     ),
                                   ),
                                 ],
@@ -63,10 +107,10 @@ class HomeScreen extends StatelessWidget {
                       flex: 3,
                       child: SingleChildScrollView(
                         child: Text(
-                          'Pineapple (Ananas comosus) is a tropical fruit native to South America belonging to the Bromeliad family, instantly recognizable by its tough, spiky skin made of hexagonal "eyes" and a crown of stiff green leaves. Inside, the fruit offers juicy, bright yellow flesh with a vibrant sweet-tart flavor that makes it popular in cuisines worldwide, whether eaten fresh, juiced, or cooked. Beyond its unique taste, it is nutritionally significant for being rich in Vitamin C and Manganese, and it is famous for containing bromelain, a unique enzyme mixture that aids in protein digestion and possesses anti-inflammatory properties.',
+                          'Ang Pinya (Ananas comosus) ay isang tropikal na prutas na nagmula sa South America at kabilang sa pamilyang Bromeliad. Madaling makilala ito sa kanyang matigas at matulis na balat na may mga hexagonal na "mata" at korona ng matitibay na berdeng dahon. Sa loob, ang prutas ay may makatas at madilaw na laman na may matamis at maasim na lasa na ginagawa itong sikat sa buong mundo, kainin man ito ng sariwa, gawing juice, o lutuin. Bukod sa natatanging lasa nito, ito ay mayaman sa Vitamin C at Manganese, at sikat dahil sa bromelain, isang natatanging enzyme na tumutulong sa pagtunaw ng protina at may katangiang anti-inflammatory.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.getTextMediumColor(context),
+                            color: AppColors.textMedium,
                             height: 1.5,
                           ),
                           textAlign: TextAlign.justify,
@@ -80,30 +124,54 @@ class HomeScreen extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'ORGANIZATIONS',
+                        'MGA ORGANISASYON',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.getTextColor(context),
+                          color: AppColors.textDark,
                           letterSpacing: 0.5,
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // Organization Cards
+                    // Organization Cards - Scrollable
                     SizedBox(
                       height: 100,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildOrganizationCard(context),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildOrganizationCard(context),
-                          ),
-                        ],
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentPage = index;
+                          });
+                        },
+                        itemCount: _totalPages,
+                        itemBuilder: (context, pageIndex) {
+                          final startIndex = pageIndex * 2;
+                          final endIndex = (startIndex + 2).clamp(0, _organizations.length);
+                          final pageOrgs = _organizations.sublist(startIndex, endIndex);
+                          
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: _buildOrganizationCard(
+                                  name: pageOrgs[0]['name']!,
+                                  logo: pageOrgs[0]['logo']!,
+                                ),
+                              ),
+                              if (pageOrgs.length > 1) ...[
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildOrganizationCard(
+                                    name: pageOrgs[1]['name']!,
+                                    logo: pageOrgs[1]['logo']!,
+                                  ),
+                                ),
+                              ] else
+                                const Expanded(child: SizedBox()),
+                            ],
+                          );
+                        },
                       ),
                     ),
 
@@ -112,13 +180,13 @@ class HomeScreen extends StatelessWidget {
                     // Pagination dots
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildDot(context, true),
-                        const SizedBox(width: 8),
-                        _buildDot(context, false),
-                        const SizedBox(width: 8),
-                        _buildDot(context, false),
-                      ],
+                      children: List.generate(
+                        _totalPages,
+                        (index) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: _buildDot(index == _currentPage),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 12),
@@ -132,18 +200,16 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOrganizationCard(BuildContext context) {
+  Widget _buildOrganizationCard({required String name, required String logo}) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.getCardColor(context),
+        color: AppColors.cardWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.getCardBorderColor(context)),
+        border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.primaryGreen.withOpacity(0.2)
-                : AppColors.primaryGreen.withOpacity(0.08),
+            color: AppColors.primaryGreen.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -151,10 +217,11 @@ class HomeScreen extends StatelessWidget {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -168,31 +235,36 @@ class HomeScreen extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                'LOGO',
+                logo,
                 style: TextStyle(
-                  fontSize: 8,
+                  fontSize: 7,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primaryGreen,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              'Organization Title',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: Colors.white, // White text on gradient background
+          const SizedBox(height: 6),
+          Flexible(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(6),
               ),
-              textAlign: TextAlign.center,
+              child: Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  height: 1.2,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],
@@ -200,13 +272,13 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDot(BuildContext context, bool isActive) {
+  Widget _buildDot(bool isActive) {
     return Container(
       width: 8,
       height: 8,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isActive ? AppColors.primaryGreen : AppColors.getDividerColor(context),
+        color: isActive ? AppColors.primaryGreen : AppColors.divider,
       ),
     );
   }

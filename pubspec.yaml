@@ -42,6 +42,12 @@ dependencies:
   # TensorFlow Lite for ML inference
   tflite_flutter: ^0.11.0
   image: ^4.3.0
+  
+  # Local storage for history
+  shared_preferences: ^2.2.2
+  
+  # URL launcher for contact support
+  url_launcher: ^6.2.5
 
 dev_dependencies:
   flutter_test:

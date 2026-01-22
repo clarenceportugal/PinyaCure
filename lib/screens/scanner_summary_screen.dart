@@ -23,7 +23,7 @@ class ScannerSummaryScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const AppHeader(title: 'SCANNER SUMMARY'),
+            const AppHeader(title: 'BUOD NG PAG-SCAN'),
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
@@ -106,7 +106,7 @@ class ScannerSummaryScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Diagnosis Summary',
+            'Buod ng Diagnosis',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -115,7 +115,7 @@ class ScannerSummaryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Detected: $detectedDisease',
+            'Natukoy: $detectedDisease',
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -124,7 +124,7 @@ class ScannerSummaryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${confidence.toStringAsFixed(0)}% Confidence',
+            '${confidence.toStringAsFixed(0)}% Katiyakan',
             style: const TextStyle(
               fontSize: 14,
               color: Colors.black87,
@@ -146,7 +146,7 @@ class ScannerSummaryScreen extends StatelessWidget {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('View Treatment'),
+                  Text('Tingnan ang Gamot'),
                   SizedBox(width: 8),
                   Icon(Icons.arrow_drop_down, size: 20),
                 ],
@@ -177,7 +177,7 @@ class ScannerSummaryScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Sweetness Level',
+            'Antas ng Tamis',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -233,7 +233,7 @@ class ScannerSummaryScreen extends StatelessWidget {
           const SizedBox(height: 32),
           Center(
             child: Text(
-              'Sweetness: ${_getSweetnessText(sweetnessLevel)} ($sweetnessLevel)',
+              'Tamis: ${_getSweetnessText(sweetnessLevel)} ($sweetnessLevel)',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -284,11 +284,11 @@ class ScannerSummaryScreen extends StatelessWidget {
 
   String _getSweetnessText(String level) {
     final texts = {
-      'M1': 'Mild',
-      'M2': 'Moderate',
-      'M3': 'Sweet',
-      'M4': 'Very Sweet',
+      'M1': 'Bahagya',
+      'M2': 'Katamtaman',
+      'M3': 'Matamis',
+      'M4': 'Sobrang Tamis',
     };
-    return texts[level] ?? 'Sweet';
+    return texts[level] ?? 'Matamis';
   }
 }

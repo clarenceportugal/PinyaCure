@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../screens/contact_support_screen.dart';
 
 class AppHeader extends StatelessWidget {
   final String title;
@@ -13,14 +14,13 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.getCardColor(context),
+        color: AppColors.cardWhite,
         boxShadow: [
           BoxShadow(
-            color: AppColors.getLightShadowColor(context),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -36,16 +36,16 @@ class AppHeader extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.getShadowColor(context),
-                        blurRadius: 2,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
@@ -57,9 +57,9 @@ class AppHeader extends StatelessWidget {
                           color: AppColors.primaryGreenLight,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.eco_rounded,
-                          color: isDark ? AppColors.primaryGreenLight : Colors.white,
+                          color: Colors.white,
                           size: 24,
                         ),
                       );
@@ -100,16 +100,20 @@ class AppHeader extends StatelessWidget {
               ),
             ],
           ),
-          // Headphone icon (theme-aware)
+          // Headphone icon (simple black outline)
           if (showHeadphoneIcon)
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.headphones_outlined,
-                color: AppColors.getTextColor(context),
+                color: Colors.black87,
                 size: 24,
               ),
               onPressed: () {
-                // TODO: Add headphone functionality
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ContactSupportScreen(),
+                  ),
+                );
               },
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
