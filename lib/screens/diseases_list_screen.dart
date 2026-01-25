@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/app_header.dart';
 import '../constants/app_colors.dart';
 import '../data/disease_treatments.dart';
-import '../data/nutrient_deficiencies.dart';
 import 'treatment_screen.dart';
-import 'nutrient_deficiency_screen.dart';
 
 class DiseasesListScreen extends StatefulWidget {
   const DiseasesListScreen({super.key});
@@ -36,21 +34,10 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> with SingleTick
         .toList();
   }
 
-  List<NutrientDeficiencyInfo> get _filteredDeficiencies {
-    if (_searchQuery.isEmpty) {
-      return NutrientDeficiencies.deficiencies;
-    }
-    return NutrientDeficiencies.deficiencies
-        .where((d) => 
-            d.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            d.nutrient.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
-  }
-
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
   }
 
   @override
@@ -106,88 +93,76 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> with SingleTick
                       ],
                     ),
                   ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.eco_rounded, size: 18),
-                        SizedBox(width: 6),
-                        Text('Nutrients'),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
 
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.cardWhite,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.cardBorder),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryGreen.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
+                  // Search Bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.cardWhite,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.cardBorder),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryGreen.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                        decoration: InputDecoration(
                     hintText: 'Maghanap...',
-                    hintStyle: TextStyle(
-                      color: AppColors.textLight,
-                      fontSize: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: AppColors.primaryGreen,
-                    ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(
-                              Icons.clear_rounded,
-                              color: AppColors.textLight,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _searchController.clear();
-                                _searchQuery = '';
-                              });
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+                          hintStyle: TextStyle(
+                            color: AppColors.textLight,
+                            fontSize: 14,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            color: AppColors.primaryGreen,
+                          ),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(
+                                    Icons.clear_rounded,
+                                    color: AppColors.textLight,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _searchController.clear();
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ),
 
             const SizedBox(height: 12),
 
             // Tab Content
-            Expanded(
+                  Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
                   // Diseases Tab
                   _buildDiseasesTab(),
-                  // Nutrient Deficiencies Tab
-                  _buildDeficienciesTab(),
                 ],
               ),
             ),
@@ -200,81 +175,41 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> with SingleTick
   Widget _buildDiseasesTab() {
     if (_filteredDiseases.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 64,
-              color: AppColors.textLight,
-            ),
-            const SizedBox(height: 16),
-            Text(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off_rounded,
+                                  size: 64,
+                                  color: AppColors.textLight,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
               'Walang nakitang sakit',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textMedium,
-              ),
-            ),
-          ],
-        ),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: AppColors.textMedium,
+                                  ),
+                                ),
+                              ],
+                            ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: _filteredDiseases.length + 1,
-      itemBuilder: (context, index) {
-        if (index == _filteredDiseases.length) {
-          return const SizedBox(height: 20);
-        }
-        final diseaseName = _filteredDiseases[index];
-        final disease = DiseaseTreatments.getDisease(diseaseName);
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildDiseaseCard(context, disease),
-        );
-      },
-    );
-  }
-
-  Widget _buildDeficienciesTab() {
-    if (_filteredDeficiencies.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off_rounded,
-              size: 64,
-              color: AppColors.textLight,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Walang nakitang kakulangan',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppColors.textMedium,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: _filteredDeficiencies.length + 1,
-      itemBuilder: (context, index) {
-        if (index == _filteredDeficiencies.length) {
-          return const SizedBox(height: 20);
-        }
-        final deficiency = _filteredDeficiencies[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildDeficiencyCard(context, deficiency),
-        );
-      },
+                            itemBuilder: (context, index) {
+                              if (index == _filteredDiseases.length) {
+                                return const SizedBox(height: 20);
+                              }
+                              final diseaseName = _filteredDiseases[index];
+                              final disease = DiseaseTreatments.getDisease(diseaseName);
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _buildDiseaseCard(context, disease),
+                              );
+                            },
     );
   }
 
@@ -445,161 +380,6 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> with SingleTick
     );
   }
 
-  Widget _buildDeficiencyCard(BuildContext context, NutrientDeficiencyInfo deficiency) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accentYellow.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with nutrient icon and name
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.accentYellowLight.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.eco_rounded,
-                  color: AppColors.accentYellowDark,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      deficiency.name,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: _getDeficiencySeverityColor(deficiency.severity).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        deficiency.severity,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: _getDeficiencySeverityColor(deficiency.severity),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Description
-          Text(
-            deficiency.description,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textMedium,
-              height: 1.4,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-          
-          // Symptoms preview
-          if (deficiency.symptoms.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Icon(
-                  Icons.visibility_rounded,
-                  size: 14,
-                  color: AppColors.accentYellowDark,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    deficiency.symptoms.take(2).join(' • '),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textLight,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ],
-          
-          const SizedBox(height: 14),
-          
-          // View Details Button
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => NutrientDeficiencyScreen(
-                    deficiency: deficiency,
-                  ),
-                ),
-              );
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.accentYellow.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.accentYellow.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Tingnan ang Detalye',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.accentYellowDark,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: AppColors.accentYellowDark,
-                    size: 14,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Color _getSeverityColor(String severity) {
     switch (severity.toLowerCase()) {
       case 'critical':
@@ -617,19 +397,6 @@ class _DiseasesListScreenState extends State<DiseasesListScreen> with SingleTick
       case 'none':
       case 'wala':
         return AppColors.accentBlue;
-      default:
-        return AppColors.textMedium;
-    }
-  }
-
-  Color _getDeficiencySeverityColor(String severity) {
-    switch (severity.toLowerCase()) {
-      case 'malubha':
-        return Colors.red.shade700;
-      case 'katamtaman':
-        return Colors.orange.shade700;
-      case 'banayad':
-        return AppColors.primaryGreen;
       default:
         return AppColors.textMedium;
     }

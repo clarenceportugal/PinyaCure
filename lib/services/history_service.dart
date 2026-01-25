@@ -88,9 +88,6 @@ class ScanHistoryItem {
   final double confidence;
   final String? sweetnessLevel;
   final String? sweetnessName;
-  final String? nutrientDeficiency;
-  final String? nutrientDeficiencyName;
-  final double? nutrientConfidence;
   final String? imagePath;
   final DateTime timestamp;
 
@@ -100,9 +97,6 @@ class ScanHistoryItem {
     required this.confidence,
     this.sweetnessLevel,
     this.sweetnessName,
-    this.nutrientDeficiency,
-    this.nutrientDeficiencyName,
-    this.nutrientConfidence,
     this.imagePath,
     required this.timestamp,
   });
@@ -114,9 +108,6 @@ class ScanHistoryItem {
       'confidence': confidence,
       'sweetnessLevel': sweetnessLevel,
       'sweetnessName': sweetnessName,
-      'nutrientDeficiency': nutrientDeficiency,
-      'nutrientDeficiencyName': nutrientDeficiencyName,
-      'nutrientConfidence': nutrientConfidence,
       'imagePath': imagePath,
       'timestamp': timestamp.toIso8601String(),
     };
@@ -129,11 +120,6 @@ class ScanHistoryItem {
       confidence: (json['confidence'] as num).toDouble(),
       sweetnessLevel: json['sweetnessLevel'] as String?,
       sweetnessName: json['sweetnessName'] as String?,
-      nutrientDeficiency: json['nutrientDeficiency'] as String?,
-      nutrientDeficiencyName: json['nutrientDeficiencyName'] as String?,
-      nutrientConfidence: json['nutrientConfidence'] != null 
-          ? (json['nutrientConfidence'] as num).toDouble() 
-          : null,
       imagePath: json['imagePath'] as String?,
       timestamp: DateTime.parse(json['timestamp'] as String),
     );

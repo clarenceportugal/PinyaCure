@@ -6,9 +6,7 @@ import '../widgets/app_header.dart';
 import '../constants/app_colors.dart';
 import '../services/ml_service.dart';
 import '../services/history_service.dart';
-import '../data/nutrient_deficiencies.dart';
 import 'treatment_screen.dart';
-import 'nutrient_deficiency_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -24,6 +22,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
   bool _isPermissionGranted = false;
   bool _isLoading = true;
   bool _isAnalyzing = false;
+  bool _modelsReady = false;
 
   // Scan results - will be updated by ML model
   String detectedDisease = 'Pindutin ang camera para mag-scan';
@@ -31,11 +30,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
   double confidence = 0.0;
   String? sweetnessLevel;
   String? sweetnessName;
-  
-  // Nutrient deficiency results
-  String? nutrientDeficiency;
-  String? nutrientDeficiencyName;
-  double nutrientConfidence = 0.0;
 
   // ML Service
   final MLService _mlService = MLService.instance;
@@ -49,7 +43,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   Future<void> _initializeAll() async {
     await _initializeCamera();
-    await _mlService.initialize();
+    try {
+      await _mlService.initialize();
+      if (mounted) setState(() => _modelsReady = true);
+    } catch (e) {
+      if (mounted) setState(() => _modelsReady = false);
+    }
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _initializeCamera() async {
@@ -97,35 +97,68 @@ class _ScannerScreenState extends State<ScannerScreen> {
       );
 
       await _controller!.initialize();
+      
+      // Set focus mode to auto-focus
+      await _controller!.setFocusMode(FocusMode.auto);
+      await _controller!.setExposureMode(ExposureMode.auto);
 
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isInitialized = true);
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isInitialized = false;
-        });
-      }
+      if (mounted) setState(() {
+        _isLoading = false;
+        _isInitialized = false;
+      });
+    }
+  }
+
+  // Handle tap-to-focus
+  Future<void> _onCameraTap(TapDownDetails details) async {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    
+    try {
+      // Calculate tap position relative to camera preview
+      final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
+      
+      final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+      final Size size = renderBox.size;
+      
+      // Convert to camera coordinates (0.0 to 1.0)
+      final double x = localPosition.dx / size.width;
+      final double y = localPosition.dy / size.height;
+      
+      // Set focus point
+      await _controller!.setFocusPoint(Offset(x, y));
+      await _controller!.setExposurePoint(Offset(x, y));
+      
+      // Trigger auto-focus
+      await _controller!.setFocusMode(FocusMode.auto);
+    } catch (e) {
+      print('Error setting focus point: $e');
     }
   }
 
   Future<void> _takePicture() async {
-    if (!_isInitialized || _controller == null || !_controller!.value.isInitialized) {
+    if (!_isInitialized || _controller == null || !_controller!.value.isInitialized) return;
+    if (_isAnalyzing) return;
+    if (!_modelsReady) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Naglo-load pa ang mga model...'), backgroundColor: Colors.orange),
+      );
       return;
     }
-
-    if (_isAnalyzing) return;
 
     setState(() {
       _isAnalyzing = true;
     });
 
     try {
+      // Ensure focus is set before taking picture
+      await _controller!.setFocusMode(FocusMode.auto);
+      
+      // Wait a bit for focus to settle (optional, but helps with accuracy)
+      await Future.delayed(const Duration(milliseconds: 300));
+      
       final XFile photo = await _controller!.takePicture();
       
       if (mounted) {
@@ -138,10 +171,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
         );
       }
 
+      // Verify models are loaded before scanning
+      if (!_mlService.isDiseaseModelLoaded) {
+        print('Warning: Disease model not loaded');
+      }
+      if (!_mlService.isSweetnessModelLoaded) {
+        print('Warning: Sweetness model not loaded');
+      }
+
       // Analyze with ML models
       final diagnosisResult = await _mlService.analyzeImage(photo.path);
       final sweetnessResult = await _mlService.predictSweetness(photo.path);
-      final nutrientResult = await _mlService.predictNutrientDeficiency(photo.path);
+      
+      // Log results for debugging
+      print('=== SCAN RESULTS ===');
+      print('Disease: ${diagnosisResult.disease} (${diagnosisResult.confidence.toStringAsFixed(1)}%) - Loaded: ${diagnosisResult.isModelLoaded}');
+      print('Sweetness: ${sweetnessResult.level} (${sweetnessResult.confidence.toStringAsFixed(1)}%) - Loaded: ${sweetnessResult.isModelLoaded}');
 
       if (mounted) {
         setState(() {
@@ -149,9 +194,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
           confidence = diagnosisResult.confidence;
           sweetnessLevel = sweetnessResult.level;
           sweetnessName = sweetnessResult.levelName;
-          nutrientDeficiency = nutrientResult.deficiency;
-          nutrientDeficiencyName = nutrientResult.deficiencyName;
-          nutrientConfidence = nutrientResult.confidence;
           _isAnalyzing = false;
           _hasScanned = true;
         });
@@ -164,9 +206,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
             confidence: diagnosisResult.confidence,
             sweetnessLevel: sweetnessResult.level,
             sweetnessName: sweetnessResult.levelName,
-            nutrientDeficiency: nutrientResult.deficiency,
-            nutrientDeficiencyName: nutrientResult.deficiencyName,
-            nutrientConfidence: nutrientResult.confidence,
             imagePath: photo.path,
             timestamp: DateTime.now(),
           ),
@@ -221,7 +260,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.35,
                       child: GestureDetector(
-                        onTap: _takePicture,
+                        onTapDown: _onCameraTap, // Tap to focus
+                        onTap: _takePicture, // Long tap or double tap to capture
                         child: _buildCameraContainer(),
                       ),
                     ),
@@ -230,11 +270,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
                     // Diagnosis Summary Card
                     _buildDiagnosisCard(),
-
-                    const SizedBox(height: 8),
-
-                    // Nutrient Deficiency Card
-                    _buildNutrientCard(),
 
                     const SizedBox(height: 8),
 
@@ -394,7 +429,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 child: Icon(
                   Icons.bug_report_rounded,
                   color: AppColors.error,
-                  size: 18,
+                      size: 18,
                 ),
               ),
               const SizedBox(width: 8),
@@ -463,177 +498,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _buildNutrientCard() {
-    final hasDeficiency = nutrientDeficiency != null && nutrientDeficiency!.isNotEmpty;
-    
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accentBlue.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.accentBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(
-                  Icons.eco_rounded,
-                  color: AppColors.accentBlue,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Kakulangan sa Nutrient',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Nutrient status bar (similar to sweetness)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Gradient Bar - Green to Orange to Red
-                  Container(
-                    width: double.infinity,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primaryGreen,
-                          AppColors.primaryGreenLight,
-                          Colors.orange.shade300,
-                          Colors.orange.shade500,
-                          Colors.red.shade400,
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Indicator icon - only show when there's a scan result
-                  if (nutrientDeficiencyName != null)
-                    Positioned(
-                      top: -20,
-                      left: _getNutrientPosition(hasDeficiency, constraints.maxWidth),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardWhite,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          hasDeficiency ? Icons.warning_rounded : Icons.check_circle_rounded,
-                          color: hasDeficiency ? Colors.orange.shade700 : AppColors.primaryGreen,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          // Labels
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Malusog', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
-              Text('Bahagya', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
-              Text('Malubha', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Status text
-          Center(
-            child: GestureDetector(
-              onTap: hasDeficiency ? () => _openNutrientScreen(context) : null,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: nutrientDeficiencyName == null
-                      ? AppColors.divider
-                      : hasDeficiency
-                          ? Colors.orange.shade100
-                          : AppColors.primaryGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      nutrientDeficiencyName == null
-                          ? 'Mag-scan para suriin'
-                          : hasDeficiency
-                              ? '$nutrientDeficiencyName'
-                              : 'Walang Kakulangan - Malusog!',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: nutrientDeficiencyName == null
-                            ? AppColors.textLight
-                            : hasDeficiency
-                                ? Colors.orange.shade700
-                                : AppColors.primaryGreen,
-                      ),
-                    ),
-                    if (hasDeficiency) ...[
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 12,
-                        color: Colors.orange.shade700,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  double _getNutrientPosition(bool hasDeficiency, double containerWidth) {
-    // If no deficiency (healthy) - position at left (green area)
-    // If has deficiency - position at middle-right (orange/red area)
-    if (!hasDeficiency) {
-      return (containerWidth * 0.1) - 11; // 10% from left
-    } else {
-      return (containerWidth * 0.7) - 11; // 70% from left (orange area)
-    }
-  }
-
   Widget _buildSweetnessCard() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
@@ -667,14 +531,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
+          Text(
                 'Antas ng Tamis',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
             ],
           ),
           const SizedBox(height: 12),
@@ -774,21 +638,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
         ),
       ),
     );
-  }
-
-  void _openNutrientScreen(BuildContext context) {
-    if (nutrientDeficiency == null) return;
-    
-    final deficiencyInfo = NutrientDeficiencies.getDeficiency(nutrientDeficiency!);
-    if (deficiencyInfo != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => NutrientDeficiencyScreen(
-            deficiency: deficiencyInfo,
-          ),
-        ),
-      );
-    }
   }
 
   String _getSweetnessText(String level) {

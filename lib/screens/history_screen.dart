@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import '../widgets/app_header.dart';
 import '../constants/app_colors.dart';
 import '../services/history_service.dart';
-import '../data/nutrient_deficiencies.dart';
 import 'treatment_screen.dart';
 import 'image_viewer_screen.dart';
-import 'nutrient_deficiency_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -488,73 +486,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   
                   const SizedBox(height: 12),
-                  
-                  // Nutrient Deficiency info
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: item.nutrientDeficiency != null 
-                          ? AppColors.accentBlue.withOpacity(0.1)
-                          : item.nutrientDeficiencyName == 'Walang Kakulangan'
-                              ? AppColors.primaryGreen.withOpacity(0.1)
-                              : AppColors.divider,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: item.nutrientDeficiency != null 
-                            ? AppColors.accentBlue.withOpacity(0.3)
-                            : item.nutrientDeficiencyName == 'Walang Kakulangan'
-                                ? AppColors.primaryGreen.withOpacity(0.3)
-                                : AppColors.cardBorder,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          item.nutrientDeficiency != null 
-                              ? Icons.warning_rounded
-                              : item.nutrientDeficiencyName == 'Walang Kakulangan'
-                                  ? Icons.check_circle_rounded
-                                  : Icons.eco_rounded,
-                          size: 18,
-                          color: item.nutrientDeficiency != null 
-                              ? Colors.orange.shade700
-                              : item.nutrientDeficiencyName == 'Walang Kakulangan'
-                                  ? AppColors.primaryGreen
-                                  : AppColors.textLight,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            item.nutrientDeficiency != null 
-                                ? 'Nutrient: ${item.nutrientDeficiencyName}'
-                                : item.nutrientDeficiencyName == 'Walang Kakulangan'
-                                    ? 'Nutrient: Walang Kakulangan'
-                                    : 'Nutrient: Walang datos ng modelo',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: item.nutrientDeficiency != null 
-                                  ? Colors.orange.shade700
-                                  : item.nutrientDeficiencyName == 'Walang Kakulangan'
-                                      ? AppColors.primaryGreen
-                                      : AppColors.textLight,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        if (item.nutrientDeficiency != null)
-                          GestureDetector(
-                            onTap: () => _openNutrientScreen(context, item.nutrientDeficiency!),
-                            child: Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 14,
-                              color: Colors.orange.shade700,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 8),
 
                   // Sweetness info
                   Container(
@@ -652,19 +583,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
       ),
     );
-  }
-
-  void _openNutrientScreen(BuildContext context, String nutrient) {
-    final deficiencyInfo = NutrientDeficiencies.getDeficiency(nutrient);
-    if (deficiencyInfo != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => NutrientDeficiencyScreen(
-            deficiency: deficiencyInfo,
-          ),
-        ),
-      );
-    }
   }
 
   String _formatDate(DateTime date) {
