@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -26,7 +27,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   // Scan results - will be updated by ML model
   String detectedDisease = 'Pindutin ang camera para mag-scan';
-  bool _hasScanned = false;
   double confidence = 0.0;
   String? sweetnessLevel;
   String? sweetnessName;
@@ -102,12 +102,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
       await _controller!.setFocusMode(FocusMode.auto);
       await _controller!.setExposureMode(ExposureMode.auto);
 
-      if (mounted) setState(() => _isInitialized = true);
+      if (mounted) {
+        setState(() => _isInitialized = true);
+      }
     } catch (e) {
-      if (mounted) setState(() {
-        _isLoading = false;
-        _isInitialized = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isInitialized = false;
+        });
+      }
     }
   }
 
@@ -134,7 +138,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
       // Trigger auto-focus
       await _controller!.setFocusMode(FocusMode.auto);
     } catch (e) {
-      print('Error setting focus point: $e');
+      if (kDebugMode) {
+        debugPrint('Error setting focus point: $e');
+      }
     }
   }
 
@@ -172,11 +178,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
       }
 
       // Verify models are loaded before scanning
-      if (!_mlService.isDiseaseModelLoaded) {
-        print('Warning: Disease model not loaded');
-      }
-      if (!_mlService.isSweetnessModelLoaded) {
-        print('Warning: Sweetness model not loaded');
+      if (kDebugMode) {
+        if (!_mlService.isDiseaseModelLoaded) {
+          debugPrint('Warning: Disease model not loaded');
+        }
+        if (!_mlService.isSweetnessModelLoaded) {
+          debugPrint('Warning: Sweetness model not loaded');
+        }
       }
 
       // Analyze with ML models
@@ -184,9 +192,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
       final sweetnessResult = await _mlService.predictSweetness(photo.path);
       
       // Log results for debugging
-      print('=== SCAN RESULTS ===');
-      print('Disease: ${diagnosisResult.disease} (${diagnosisResult.confidence.toStringAsFixed(1)}%) - Loaded: ${diagnosisResult.isModelLoaded}');
-      print('Sweetness: ${sweetnessResult.level} (${sweetnessResult.confidence.toStringAsFixed(1)}%) - Loaded: ${sweetnessResult.isModelLoaded}');
+      if (kDebugMode) {
+        debugPrint('=== SCAN RESULTS ===');
+        debugPrint('Disease: ${diagnosisResult.disease} (${diagnosisResult.confidence.toStringAsFixed(1)}%) - Loaded: ${diagnosisResult.isModelLoaded}');
+        debugPrint('Sweetness: ${sweetnessResult.level} (${sweetnessResult.confidence.toStringAsFixed(1)}%) - Loaded: ${sweetnessResult.isModelLoaded}');
+      }
 
       if (mounted) {
         setState(() {
@@ -195,7 +205,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
           sweetnessLevel = sweetnessResult.level;
           sweetnessName = sweetnessResult.levelName;
           _isAnalyzing = false;
-          _hasScanned = true;
         });
 
         // Save to history
@@ -211,15 +220,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(diagnosisResult.isModelLoaded 
-              ? 'Tapos na ang pagsusuri!' 
-              : 'Hindi na-load ang modelo - placeholder lamang'),
-            backgroundColor: AppColors.primaryGreen,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(diagnosisResult.isModelLoaded 
+                ? 'Tapos na ang pagsusuri!' 
+                : 'Hindi na-load ang modelo - placeholder lamang'),
+              backgroundColor: AppColors.primaryGreen,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

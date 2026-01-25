@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
@@ -141,7 +140,7 @@ class MLService {
         _sweetnessInterpreter = await Interpreter.fromAsset(path);
       } catch (e) {
         print('  fromAsset failed, trying fromBuffer: $e');
-        _sweetnessInterpreter = await Interpreter.fromBuffer(bytes);
+        _sweetnessInterpreter = Interpreter.fromBuffer(bytes);
       }
       print('✓ Sweetness model loaded (input 100-dim, output scalar)');
     } catch (e, st) {
@@ -324,14 +323,6 @@ class MLService {
     return exps.map((exp) => exp / sum).toList();
   }
 
-  /// Calculate variance of predictions - higher variance = more confident model
-  double _calculateVariance(List<double> values) {
-    if (values.isEmpty) return 0.0;
-    final mean = values.reduce((a, b) => a + b) / values.length;
-    final squaredDiffs = values.map((v) => (v - mean) * (v - mean));
-    return squaredDiffs.reduce((a, b) => a + b) / values.length;
-  }
-
   /// Predict sweetness level from image using AI model only.
   /// Fallback (luminance heuristic) only when model not loaded.
   Future<SweetnessResult> predictSweetness(String imagePath) async {
@@ -461,41 +452,6 @@ class MLService {
     return (level: _sweetnessLabels[idx], index: idx);
   }
 
-  /// Preprocess image to flat Float32List buffer [224*224*3]
-  Future<Float32List> _preprocessToFloat32Buffer(String imagePath) async {
-    final file = File(imagePath);
-    final bytes = await file.readAsBytes();
-    img.Image? image = img.decodeImage(bytes);
-    if (image == null) throw Exception('Failed to decode image');
-    const size = 224;
-    image = img.copyResize(image, width: size, height: size);
-    final out = Float32List(size * size * 3);
-    int i = 0;
-    for (int y = 0; y < size; y++) {
-      for (int x = 0; x < size; x++) {
-        final p = image.getPixel(x, y);
-        out[i++] = p.r / 255.0;
-        out[i++] = p.g / 255.0;
-        out[i++] = p.b / 255.0;
-      }
-    }
-    return out;
-  }
-
-  /// Reshape flat list to 4D nested structure [batch][height][width][channels]
-  List<List<List<List<double>>>> _reshapeTo4D(List<double> flat, int b, int h, int w, int c) {
-    return List.generate(b, (bi) =>
-      List.generate(h, (hi) =>
-        List.generate(w, (wi) =>
-          List.generate(c, (ci) {
-            final idx = bi * h * w * c + hi * w * c + wi * c + ci;
-            return flat[idx];
-          })
-        )
-      )
-    );
-  }
-
   /// Preprocess image with RAW pixel values [0-255] - NO normalization!
   /// This matches the Python training script that uses raw cv2 images
   /// Includes center crop for better accuracy
@@ -565,74 +521,6 @@ class MLService {
     );
     
     return input;
-  }
-
-  /// Preprocess image for model input
-  /// Tries ImageNet normalization first (standard for most pre-trained models)
-  /// If that doesn't work well, can fall back to simple [0,1] normalization
-  Future<List<List<List<List<double>>>>> _preprocessImage(String imagePath, {bool useImageNetNormalization = true}) async {
-    // Read image file
-    final file = File(imagePath);
-    final bytes = await file.readAsBytes();
-    
-    // Decode image
-    img.Image? image = img.decodeImage(bytes);
-    if (image == null) throw Exception('Failed to decode image');
-    
-    // Resize to model input size (typically 224x224)
-    const inputSize = 224;
-    image = img.copyResize(image, width: inputSize, height: inputSize);
-    
-    if (useImageNetNormalization) {
-      // ImageNet normalization constants (for pre-trained models like ResNet, EfficientNet, etc.)
-      // Mean: [0.485, 0.456, 0.406]
-      // Std: [0.229, 0.224, 0.225]
-      const mean = [0.485, 0.456, 0.406];
-      const std = [0.229, 0.224, 0.225];
-      
-      // Convert to normalized float array with ImageNet normalization
-      final input = List.generate(
-        1,
-        (_) => List.generate(
-          inputSize,
-          (y) => List.generate(
-            inputSize,
-            (x) {
-              final pixel = image!.getPixel(x, y);
-              // Normalize: (pixel / 255.0 - mean) / std
-              return [
-                ((pixel.r / 255.0) - mean[0]) / std[0],
-                ((pixel.g / 255.0) - mean[1]) / std[1],
-                ((pixel.b / 255.0) - mean[2]) / std[2],
-              ];
-            },
-          ),
-        ),
-      );
-      
-      return input;
-    } else {
-      // Simple [0, 1] normalization (for custom models)
-      final input = List.generate(
-        1,
-        (_) => List.generate(
-          inputSize,
-          (y) => List.generate(
-            inputSize,
-            (x) {
-              final pixel = image!.getPixel(x, y);
-              return [
-                pixel.r / 255.0,
-                pixel.g / 255.0,
-                pixel.b / 255.0,
-              ];
-            },
-          ),
-        ),
-      );
-      
-      return input;
-    }
   }
 
   /// Extract 100-dim feature vector for sweetness model (input shape [1, 100]).

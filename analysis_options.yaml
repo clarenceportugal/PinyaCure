@@ -21,8 +21,13 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    avoid_print: false  # Allow print statements for debugging
+    curly_braces_in_flow_control_structures: false  # Allow single-line if statements
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+
+analyzer:
+  errors:
+    deprecated_member_use: ignore  # Ignore withOpacity deprecation warnings
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options
