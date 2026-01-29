@@ -217,6 +217,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
           detectedDisease = diagnosisResult.disease;
           confidence = diagnosisResult.confidence;
           top3Diseases = top3;
+
+          if (top3Diseases != null) {
+            _showResultsBottomSheet();
           // Sweetness reading: use only when from model (isModelLoaded && level from inference)
           if (sweetnessResult.isModelLoaded && sweetnessResult.level != null) {
             sweetnessLevel = sweetnessResult.level;
@@ -229,7 +232,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
             sweetnessName = null;
           }
           _isAnalyzing = false;
-        });
+        }});
+
+  
+
 
         // Save to history
         await _historyService.saveScan(
@@ -322,6 +328,139 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
+
+ Widget _buildSweetnessCard() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      decoration: BoxDecoration(
+        color: AppColors.cardWhite,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accentYellow.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.accentYellowLight.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.star_rounded,
+                  color: AppColors.accentYellowDark,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 8),
+          Text(
+                'Antas ng Tamis',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textDark,
+            ),
+          ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      gradient: AppColors.sweetnessGradient,
+                    ),
+                  ),
+                  if (sweetnessLevel != null)
+                    Positioned(
+                      top: -20,
+                      left: _getSweetnessPosition(sweetnessLevel!, constraints.maxWidth),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardWhite,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/logo/pinyacure_logo.png',
+                          width: 22,
+                          height: 22,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.eco_rounded,
+                              color: AppColors.primaryGreen,
+                              size: 22,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('M1', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+              Text('M2', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+              Text('M3', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+              Text('M4', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: sweetnessLevel != null 
+                    ? AppColors.accentYellowLight.withOpacity(0.5)
+                    : AppColors.divider,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                sweetnessLevel != null 
+                    ? 'Tamis: ${_getSweetnessText(sweetnessLevel!)} ($sweetnessLevel)'
+                    : 'Mag-scan para malaman ang tamis',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: sweetnessLevel != null 
+                      ? AppColors.accentYellowDark
+                      : AppColors.textLight,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  
   Widget _buildCameraContainer() {
     if (_isLoading) {
       return Container(
@@ -580,138 +719,115 @@ class _ScannerScreenState extends State<ScannerScreen> {
       ),
     );
   }
+  
+  
+  
+void _showResultsBottomSheet() {
+  if (top3Diseases == null) return;
 
-  Widget _buildSweetnessCard() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      decoration: BoxDecoration(
-        color: AppColors.cardWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accentYellow.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.accentYellowLight.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(
-                  Icons.star_rounded,
-                  color: AppColors.accentYellowDark,
-                  size: 18,
-                ),
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    builder: (context) {
+      // 🔽 20% of screen height
+      double sheetHeight = MediaQuery.of(context).size.height * 0.4;
+
+      return Container(
+        height: sheetHeight,
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Handle Bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
               ),
-              const SizedBox(width: 8),
-          Text(
-                'Antas ng Tamis',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
             ),
-          ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      gradient: AppColors.sweetnessGradient,
-                    ),
-                  ),
-                  if (sweetnessLevel != null)
-                    Positioned(
-                      top: -20,
-                      left: _getSweetnessPosition(sweetnessLevel!, constraints.maxWidth),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardWhite,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/logo/pinyacure_logo.png',
-                          width: 22,
-                          height: 22,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.eco_rounded,
-                              color: AppColors.primaryGreen,
-                              size: 22,
-                            );
-                          },
+
+            const Text(
+              'Resulta ng Pagsusuri',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+
+            const Spacer(),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: top3Diseases!.map((entry) {
+                final isTop = top3Diseases!.indexOf(entry) == 0;
+                return Expanded(
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: isTop
+                            ? AppColors.error.withOpacity(0.1)
+                            : AppColors.divider,
+                        child: Text(
+                          '${(entry.value * 100).toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isTop
+                                ? AppColors.error
+                                : AppColors.textMedium,
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('M1', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
-              Text('M2', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
-              Text('M3', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
-              Text('M4', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMedium)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: sweetnessLevel != null 
-                    ? AppColors.accentYellowLight.withOpacity(0.5)
-                    : AppColors.divider,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                sweetnessLevel != null 
-                    ? 'Tamis: ${_getSweetnessText(sweetnessLevel!)} ($sweetnessLevel)'
-                    : 'Mag-scan para malaman ang tamis',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: sweetnessLevel != null 
-                      ? AppColors.accentYellowDark
-                      : AppColors.textLight,
+                      const SizedBox(height: 6),
+                      Text(
+                        entry.key,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight:
+                              isTop ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+
+            const Spacer(),
+
+            // ✅ SafeArea prevents navigation bar overlap
+            SafeArea(
+              top: false,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  minimumSize: const Size(double.infinity, 36),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
+    },
+  );
+}
 
+  
+  
   void _openTreatmentScreen(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
