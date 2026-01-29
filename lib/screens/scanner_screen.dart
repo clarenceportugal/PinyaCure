@@ -489,10 +489,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
               ),
             ),
             const SizedBox(height: 6),
+            // Top 3: pinakamataas na confidence nasa taas (sorted by confidence desc)
             ...top3Diseases!.asMap().entries.map((entry) {
               final rank = entry.key + 1;
               final name = entry.value.key;
-              final conf = (entry.value.value * 100).toStringAsFixed(0);
               final isTop = rank == 1;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -509,7 +509,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     ),
                     Expanded(
                       child: Text(
-                        '$name — $conf%',
+                        name,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: isTop ? FontWeight.w600 : FontWeight.w500,
@@ -531,14 +531,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.error,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${confidence.toStringAsFixed(0)}% Katiyakan',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMedium,
                   ),
                 ),
               ],
