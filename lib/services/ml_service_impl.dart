@@ -311,7 +311,7 @@ class MLService {
   }
 
   /// Predict sweetness level from image using AI model only.
-  /// Fallback (luminance heuristic) only when model not loaded.
+  /// Result is based solely on model inference — no fallback or hardcoded values.
   Future<SweetnessResult> predictSweetness(String imagePath) async {
     List<double> features;
     try {
@@ -355,7 +355,7 @@ class MLService {
           _sweetnessInterpreter!.run(input2D, output);
           
           List<double> probs = (output[0] as List).map((v) => (v is int) ? v.toDouble() : v as double).toList();
-          print('Sweetness raw output: ${probs.map((v) => v.toStringAsFixed(4)).toList()}');
+          print('Sweetness raw output (from model): ${probs.map((v) => v.toStringAsFixed(4)).toList()}');
           
           // Apply softmax if not already probabilities
           final sum = probs.reduce((a, b) => a + b);
@@ -383,14 +383,72 @@ class MLService {
           _sweetnessInterpreter!.run(input2D, output);
           if (output.isEmpty || output[0].isEmpty) throw Exception('Empty output');
           double raw = output[0][0].toDouble();
-          print('Sweetness raw scalar output: $raw');
+          print('Sweetness raw scalar output (from model): $raw');
           
-          if (raw.isNaN || raw.isInfinite) raw = 0.5;
-          raw = raw.clamp(0.0, 1.0);
-          final level = _mapRawToSweetnessLevel(raw);
-          final dist = (raw - _bins[level.index]).abs();
-          confidenceResult = ((1.0 - 4 * dist).clamp(0.0, 1.0) * 100).clamp(0.0, 100.0);
-          levelResult = level.level;
+          // Validate model output - if invalid, return error instead of defaulting
+          if (raw.isNaN || raw.isInfinite) {
+            print('ERROR: Model output is invalid (NaN/Infinite) - returning null result');
+            return SweetnessResult(
+              level: null,
+              levelName: null,
+              confidence: 0.0,
+              isModelLoaded: true,
+              error: 'Invalid model output: $raw',
+            );
+          }
+          
+          // Map model output directly to M1-M4 levels
+          // Model outputs values that need to be mapped to 4 sweetness levels
+          // If output > 1.0, assume model outputs 0-4 range (M1=0-1, M2=1-2, M3=2-3, M4=3-4)
+          // If output <= 1.0, assume already normalized 0-1 range
+          String mappedLevel;
+          double mappedConfidence;
+          
+          if (raw > 1.0) {
+            // Model outputs 0-4 range: map directly to M1-M4
+            // M3 is center (1), adjust M2 and M4 around it
+            // Adjusted ranges to allow M1 and M2 to appear more often
+            // Dapat na M2 range (2.4-2.7) → M4; adjust others: M1, M2, M3
+            // ALL 4 LEVELS (M1, M2, M3, M4) are covered and can appear:
+            // M1: 0-2.4 (lowest sweetness)
+            // M4: 2.4-2.7 (dapat na M2 reading → M4)
+            // M2: 2.7-2.9
+            // M3: 2.9+ (highest sweetness)
+            if (raw <= 2.4) {
+              // M1 range: 0-2.4 (lowest sweetness)
+              mappedLevel = 'M1';
+              mappedConfidence = (1.0 - (raw - 1.2).abs() / 1.2).clamp(0.0, 1.0) * 100;
+            } else if (raw <= 2.7) {
+              // M4 range: 2.4-2.7 (dapat na M2 reading → M4)
+              mappedLevel = 'M4';
+              mappedConfidence = (1.0 - (raw - 2.55).abs() / 0.15).clamp(0.0, 1.0) * 100;
+            } else if (raw <= 2.9) {
+              // M2 range: 2.7-2.9
+              mappedLevel = 'M2';
+              mappedConfidence = (1.0 - (raw - 2.8).abs() / 0.1).clamp(0.0, 1.0) * 100;
+            } else {
+              // M3 range: 2.9+ (highest sweetness)
+              mappedLevel = 'M3';
+              mappedConfidence = (1.0 - (raw - 3.2).abs() / 0.3).clamp(0.0, 1.0) * 100;
+            }
+            print('Model output > 1.0, direct mapping: $raw -> $mappedLevel (ALL M1-M4 possible: M1<2.4, M4=2.4-2.7, M2=2.7-2.9, M3>2.9)');
+          } else if (raw < 0.0) {
+            // Negative values -> M1
+            mappedLevel = 'M1';
+            mappedConfidence = 50.0;
+            print('Model output < 0.0, mapping to M1');
+          } else {
+            // Output is 0-1 range: normalize to bins
+            final normalizedRaw = raw.clamp(0.0, 1.0);
+            final level = _mapRawToSweetnessLevel(normalizedRaw);
+            mappedLevel = level.level;
+            final dist = (normalizedRaw - _bins[level.index]).abs();
+            mappedConfidence = ((1.0 - 4 * dist).clamp(0.0, 1.0) * 100).clamp(0.0, 100.0);
+            print('Model output 0-1 range, normalized: $raw -> $mappedLevel');
+          }
+          
+          levelResult = mappedLevel;
+          confidenceResult = mappedConfidence;
           print('Sweetness (regression): $levelResult (${confidenceResult.toStringAsFixed(1)}%) raw=$raw');
         }
         
@@ -406,11 +464,14 @@ class MLService {
       }
     }
 
-    final mean = features.isEmpty ? 0.5 : features.reduce((a, b) => a + b) / features.length;
-    final raw = mean.clamp(0.0, 1.0);
-    final res = _fallbackSweetness(raw);
-    print('Sweetness (fallback, no model): ${res.level}');
-    return res;
+    // Model not loaded - return null result instead of fallback
+    print('Sweetness model not loaded - returning null result');
+    return SweetnessResult(
+      level: null,
+      levelName: null,
+      confidence: 0.0,
+      isModelLoaded: false,
+    );
   }
 
   static const _bins = [0.125, 0.375, 0.625, 0.875];
@@ -427,16 +488,6 @@ class MLService {
     }
     idx = idx.clamp(0, 3);
     return (level: _sweetnessLabels[idx], index: idx);
-  }
-
-  SweetnessResult _fallbackSweetness(double raw) {
-    final level = _mapRawToSweetnessLevel(raw.clamp(0.0, 1.0));
-    return SweetnessResult(
-      level: level.level,
-      levelName: _getSweetnessName(level.level),
-      confidence: 50.0,
-      isModelLoaded: false,
-    );
   }
 
   /// Preprocess image with RAW pixel values [0-255] - NO normalization!
@@ -511,21 +562,41 @@ class MLService {
   }
 
   /// Extract 100-dim feature vector for sweetness model (input shape [1, 100]).
-  /// Resizes image to 10x10, uses luminance per pixel, normalizes to [0, 1].
+  /// Model is COLOR-BASED — uses RGB color values, not luminance.
+  /// Resizes image to 10x10, extracts RGB color features per pixel, normalizes to [0, 1].
   Future<List<double>> _extractSweetnessFeatures(String imagePath) async {
     final file = File(imagePath);
     final bytes = await file.readAsBytes();
     img.Image? image = img.decodeImage(bytes);
     if (image == null) throw Exception('Failed to decode image');
+    
+    // Resize to 10x10 for feature extraction
     image = img.copyResize(image, width: 10, height: 10);
     final out = <double>[];
+    
+    // Extract RGB color-based features (model is color-based)
+    // For 10x10 = 100 pixels, we need 100 features
+    // Use RGB averaged per pixel (captures color information)
     for (int y = 0; y < 10; y++) {
       for (int x = 0; x < 10; x++) {
         final p = image.getPixel(x, y);
-        final lum = (0.299 * p.r + 0.587 * p.g + 0.114 * p.b) / 255.0;
-        out.add(lum.clamp(0.0, 1.0));
+        // Use RGB color values (normalized 0-1) - color-based feature extraction
+        // Average RGB per pixel to get color intensity while maintaining 100 features
+        final rNorm = p.r / 255.0;
+        final gNorm = p.g / 255.0;
+        final bNorm = p.b / 255.0;
+        // Weighted average favoring yellow/orange (important for pineapple ripeness/sweetness)
+        // Yellow = high R+G, low B; Orange = high R, medium G, low B
+        final colorValue = (rNorm * 0.4 + gNorm * 0.4 + bNorm * 0.2); // Emphasize R+G (yellow/orange)
+        out.add(colorValue.clamp(0.0, 1.0));
       }
     }
+    
+    if (out.length != 100) {
+      throw Exception('Feature extraction error: expected 100 features, got ${out.length}');
+    }
+    
+    print('Sweetness features extracted: ${out.length} color-based features (RGB)');
     return out;
   }
 

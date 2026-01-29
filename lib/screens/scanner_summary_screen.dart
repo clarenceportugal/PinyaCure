@@ -6,14 +6,14 @@ class ScannerSummaryScreen extends StatelessWidget {
   final String? imagePath;
   final String detectedDisease;
   final double confidence;
-  final String sweetnessLevel;
+  final String? sweetnessLevel;
 
   const ScannerSummaryScreen({
     super.key,
     this.imagePath,
     this.detectedDisease = 'Phytophthora Heart Rot (Top Rot)',
     this.confidence = 92.0,
-    this.sweetnessLevel = 'M3',
+    this.sweetnessLevel,
   });
 
   @override
@@ -233,7 +233,9 @@ class ScannerSummaryScreen extends StatelessWidget {
           const SizedBox(height: 32),
           Center(
             child: Text(
-              'Tamis: ${_getSweetnessText(sweetnessLevel)} ($sweetnessLevel)',
+              sweetnessLevel != null
+                  ? 'Tamis: ${_getSweetnessText(sweetnessLevel!)} ($sweetnessLevel)'
+                  : 'Mag-scan para malaman ang tamis',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -282,7 +284,8 @@ class ScannerSummaryScreen extends StatelessWidget {
     );
   }
 
-  String _getSweetnessText(String level) {
+  String _getSweetnessText(String? level) {
+    if (level == null) return 'Hindi Alam';
     final texts = {
       'M1': 'Bahagya',
       'M2': 'Katamtaman',

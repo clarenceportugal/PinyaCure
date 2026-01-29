@@ -28,6 +28,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
   // Scan results - will be updated by ML model
   String detectedDisease = 'Pindutin ang camera para mag-scan';
   double confidence = 0.0;
+  /// Top 3 disease predictions (name, confidence 0-100) from model, null before first scan
+  List<MapEntry<String, double>>? top3Diseases;
   String? sweetnessLevel;
   String? sweetnessName;
 
@@ -156,6 +158,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     setState(() {
       _isAnalyzing = true;
+      // Reset results when starting new scan
+      top3Diseases = null;
+      sweetnessLevel = null;
+      sweetnessName = null;
     });
 
     try {
@@ -187,11 +193,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
         }
       }
 
-      // Analyze with ML models
+      // Analyze with ML models — results are based on model inference only
       final diagnosisResult = await _mlService.analyzeImage(photo.path);
       final sweetnessResult = await _mlService.predictSweetness(photo.path);
       
-      // Log results for debugging
+      // Log results (sweetness comes from model only when isModelLoaded is true)
       if (kDebugMode) {
         debugPrint('=== SCAN RESULTS ===');
         debugPrint('Disease: ${diagnosisResult.disease} (${diagnosisResult.confidence.toStringAsFixed(1)}%) - Loaded: ${diagnosisResult.isModelLoaded}');
@@ -199,11 +205,29 @@ class _ScannerScreenState extends State<ScannerScreen> {
       }
 
       if (mounted) {
+        // Build top 3 from model allPredictions (sorted by confidence desc)
+        List<MapEntry<String, double>>? top3;
+        if (diagnosisResult.allPredictions != null &&
+            diagnosisResult.allPredictions!.isNotEmpty) {
+          final sorted = diagnosisResult.allPredictions!.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+          top3 = sorted.take(3).toList();
+        }
         setState(() {
           detectedDisease = diagnosisResult.disease;
           confidence = diagnosisResult.confidence;
-          sweetnessLevel = sweetnessResult.level;
-          sweetnessName = sweetnessResult.levelName;
+          top3Diseases = top3;
+          // Sweetness reading: use only when from model (isModelLoaded && level from inference)
+          if (sweetnessResult.isModelLoaded && sweetnessResult.level != null) {
+            sweetnessLevel = sweetnessResult.level;
+            sweetnessName = sweetnessResult.levelName;
+            if (kDebugMode) {
+              debugPrint('Sweetness display: from model only — ${sweetnessResult.level} (${sweetnessResult.confidence.toStringAsFixed(1)}%)');
+            }
+          } else {
+            sweetnessLevel = null;
+            sweetnessName = null;
+          }
           _isAnalyzing = false;
         });
 
@@ -455,22 +479,70 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            'Natukoy: $detectedDisease',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.error,
+          if (top3Diseases != null && top3Diseases!.isNotEmpty) ...[
+            Text(
+              'Natukoy (Top 3):',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textDark,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${confidence.toStringAsFixed(0)}% Katiyakan',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.textMedium,
+            const SizedBox(height: 6),
+            ...top3Diseases!.asMap().entries.map((entry) {
+              final rank = entry.key + 1;
+              final name = entry.value.key;
+              final conf = (entry.value.value * 100).toStringAsFixed(0);
+              final isTop = rank == 1;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$rank. ',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isTop ? FontWeight.w600 : FontWeight.w500,
+                        color: isTop ? AppColors.error : AppColors.textMedium,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        '$name — $conf%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isTop ? FontWeight.w600 : FontWeight.w500,
+                          color: isTop ? AppColors.error : AppColors.textMedium,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ] else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Natukoy: $detectedDisease',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${confidence.toStringAsFixed(0)}% Katiyakan',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMedium,
+                  ),
+                ),
+              ],
             ),
-          ),
           const SizedBox(height: 10),
           GestureDetector(
             onTap: () => _openTreatmentScreen(context),
