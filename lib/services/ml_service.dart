@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
@@ -36,16 +37,16 @@ class MLService {
       await _loadSweetnessModel();
 
       _isInitialized = true;
-      print('ML Service initialized successfully');
+      debugPrint('ML Service initialized successfully');
     } catch (e) {
-      print('Error initializing ML Service: $e');
+      debugPrint('Error initializing ML Service: $e');
       _isInitialized = false;
     }
   }
 
   Future<void> _loadDiseaseModel() async {
     try {
-      print('Attempting to load disease model...');
+      debugPrint('Attempting to load disease model...');
       
       // First, verify the asset exists by trying to load it as bytes
       List<String> pathsToTry = [
@@ -58,14 +59,14 @@ class MLService {
       String? workingPath;
       for (final path in pathsToTry) {
         try {
-          print('Checking if asset exists: $path');
+          debugPrint('Checking if asset exists: $path');
           // Try to load as bytes to verify it exists
           final bytes = await rootBundle.load(path);
-          print('✓ Asset found at: $path (size: ${bytes.lengthInBytes} bytes)');
+          debugPrint('✓ Asset found at: $path (size: ${bytes.lengthInBytes} bytes)');
           workingPath = path;
           break;
         } catch (e) {
-          print('✗ Asset not found at: $path - $e');
+          debugPrint('✗ Asset not found at: $path - $e');
         }
       }
       
@@ -74,21 +75,21 @@ class MLService {
       }
       
       // Now load the model using the working path
-      print('Loading model from: $workingPath');
+      debugPrint('Loading model from: $workingPath');
       _diseaseInterpreter = await Interpreter.fromAsset(workingPath);
       
       if (_diseaseInterpreter == null) {
         throw Exception('Interpreter is null after loading');
       }
       
-      print('✓ Disease model file loaded successfully');
+      debugPrint('✓ Disease model file loaded successfully');
       
       // Load labels
       _diseaseLabels = await _loadLabels('assets/models/labels.txt');
       
       // Validate labels
       if (_diseaseLabels.isEmpty) {
-        print('Warning: labels.txt is empty, using default labels');
+        debugPrint('Warning: labels.txt is empty, using default labels');
         _diseaseLabels = [
           'Healthy',
           'Phytophthora Heart Rot',
@@ -98,24 +99,24 @@ class MLService {
         ];
       }
       
-      print('✓ Disease model loaded: ${_diseaseLabels.length} classes');
+      debugPrint('✓ Disease model loaded: ${_diseaseLabels.length} classes');
       
       // Validate model input/output shapes
       final inputTensors = _diseaseInterpreter!.getInputTensors();
       final outputTensors = _diseaseInterpreter!.getOutputTensors();
-      print('  Input shape: ${inputTensors[0].shape}, Output shape: ${outputTensors[0].shape}');
+      debugPrint('  Input shape: ${inputTensors[0].shape}, Output shape: ${outputTensors[0].shape}');
       
       // Verify labels match output size
       if (outputTensors[0].shape.isNotEmpty) {
         final expectedOutputSize = outputTensors[0].shape.reduce((a, b) => a * b);
         if (_diseaseLabels.length != expectedOutputSize) {
-          print('⚠ Warning: Labels count (${_diseaseLabels.length}) != model output size ($expectedOutputSize)');
+          debugPrint('⚠ Warning: Labels count (${_diseaseLabels.length}) != model output size ($expectedOutputSize)');
         }
       }
       
     } catch (e, stackTrace) {
-      print('✗ Disease model not found or error loading: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('✗ Disease model not found or error loading: $e');
+      debugPrint('Stack trace: $stackTrace');
       _diseaseInterpreter = null;
       // Use default labels if model not available
       _diseaseLabels = [
@@ -132,20 +133,20 @@ class MLService {
     _sweetnessLabels = ['M1', 'M2', 'M3', 'M4'];
     const path = 'assets/models/sweetness_model.tflite';
     try {
-      print('Attempting to load sweetness model...');
+      debugPrint('Attempting to load sweetness model...');
       final byteData = await rootBundle.load(path);
       final bytes = byteData.buffer.asUint8List();
-      print('✓ Sweetness asset found: $path (${bytes.length} bytes)');
+      debugPrint('✓ Sweetness asset found: $path (${bytes.length} bytes)');
       try {
         _sweetnessInterpreter = await Interpreter.fromAsset(path);
       } catch (e) {
-        print('  fromAsset failed, trying fromBuffer: $e');
+        debugPrint('  fromAsset failed, trying fromBuffer: $e');
         _sweetnessInterpreter = Interpreter.fromBuffer(bytes);
       }
-      print('✓ Sweetness model loaded (input 100-dim, output scalar)');
+      debugPrint('✓ Sweetness model loaded (input 100-dim, output scalar)');
     } catch (e, st) {
-      print('✗ Sweetness model error: $e');
-      print('  $st');
+      debugPrint('✗ Sweetness model error: $e');
+      debugPrint('  $st');
       _sweetnessInterpreter = null;
     }
   }
@@ -159,7 +160,7 @@ class MLService {
           .where((label) => label.isNotEmpty)
           .toList();
     } catch (e) {
-      print('Error loading labels from $path: $e');
+      debugPrint('Error loading labels from $path: $e');
       return [];
     }
   }
@@ -187,49 +188,29 @@ class MLService {
     try {
       final inputTensors = _diseaseInterpreter!.getInputTensors();
       final expectedInputShape = inputTensors[0].shape;
-      print('Disease model expects input shape: $expectedInputShape');
+      debugPrint('Disease model expects input shape: $expectedInputShape');
       
       final outputTensors = _diseaseInterpreter!.getOutputTensors();
       final outputShape = outputTensors[0].shape;
-      print('Disease model output shape: $outputShape');
-      print('Labels count: ${_diseaseLabels.length}');
-      print('Labels: $_diseaseLabels');
+      debugPrint('Disease model output shape: $outputShape');
+      debugPrint('Labels count: ${_diseaseLabels.length}');
+      debugPrint('Labels: $_diseaseLabels');
       
       // Check if labels count matches model output
       if (outputShape.length >= 2 && outputShape[1] != _diseaseLabels.length) {
-        print('WARNING: Model outputs ${outputShape[1]} classes but labels has ${_diseaseLabels.length}');
+        debugPrint('WARNING: Model outputs ${outputShape[1]} classes but labels has ${_diseaseLabels.length}');
       }
       
       // IMPORTANT: Model expects RAW pixel values [0-255], NOT normalized!
       // Based on the Python training script that uses: np.expand_dims(resized_frame, axis=0)
       final imageData = await _preprocessImageRaw(imagePath);
-      print('Preprocessed input (raw 0-255): [1][224][224][3]');
+      debugPrint('Preprocessed input (raw 0-255): [1][224][224][3]');
       
-      // Run inference multiple times and average for stability
-      const numRuns = 3;
-      List<List<double>> allPredictions = [];
-      
-      for (int run = 0; run < numRuns; run++) {
-        final output = List.generate(outputShape[0], (_) => List.filled(outputShape[1], 0.0));
-        _diseaseInterpreter!.run(imageData, output);
-        
-        // Flatten output [1][N] -> [N]
-        List<double> rawPredictions = (output[0] as List).map((v) => (v is int) ? v.toDouble() : v as double).toList();
-        allPredictions.add(rawPredictions);
-      }
-      
-      // Average predictions across runs
-      List<double> rawPredictions = List.filled(allPredictions[0].length, 0.0);
-      for (int i = 0; i < rawPredictions.length; i++) {
-        double sum = 0;
-        for (int run = 0; run < numRuns; run++) {
-          sum += allPredictions[run][i];
-        }
-        rawPredictions[i] = sum / numRuns;
-      }
-      
-      // Debug: print averaged raw predictions
-      print('Averaged raw predictions ($numRuns runs): ${rawPredictions.map((v) => v.toStringAsFixed(4)).toList()}');
+      // Single run for speed; result is stable enough per image
+      final output = List.generate(outputShape[0], (_) => List.filled(outputShape[1], 0.0));
+      _diseaseInterpreter!.run(imageData, output);
+      List<double> rawPredictions = (output[0] as List).map((v) => (v is int) ? v.toDouble() : v as double).toList();
+      debugPrint('Raw predictions: ${rawPredictions.map((v) => v.toStringAsFixed(4)).toList()}');
       final sum = rawPredictions.reduce((a, b) => a + b);
       final isAlreadyProbabilities = (sum - 1.0).abs() < 0.1;
       final List<double> predictions = isAlreadyProbabilities
@@ -248,13 +229,13 @@ class MLService {
       final top2Conf = sorted.length > 1 ? predictions[sorted[1]] * 100 : 0.0;
       final confidenceGap = top1Conf - top2Conf;
       
-      print('=== PREDICTION ANALYSIS ===');
-      print('Top 1: ${sorted[0] < _diseaseLabels.length ? _diseaseLabels[sorted[0]] : "Unknown"} = ${top1Conf.toStringAsFixed(1)}%');
-      print('Top 2: ${sorted.length > 1 && sorted[1] < _diseaseLabels.length ? _diseaseLabels[sorted[1]] : "Unknown"} = ${top2Conf.toStringAsFixed(1)}%');
-      print('Confidence gap: ${confidenceGap.toStringAsFixed(1)}%');
+      debugPrint('=== PREDICTION ANALYSIS ===');
+      debugPrint('Top 1: ${sorted[0] < _diseaseLabels.length ? _diseaseLabels[sorted[0]] : "Unknown"} = ${top1Conf.toStringAsFixed(1)}%');
+      debugPrint('Top 2: ${sorted.length > 1 && sorted[1] < _diseaseLabels.length ? _diseaseLabels[sorted[1]] : "Unknown"} = ${top2Conf.toStringAsFixed(1)}%');
+      debugPrint('Confidence gap: ${confidenceGap.toStringAsFixed(1)}%');
       
       if (maxIndex >= _diseaseLabels.length) {
-        print('Warning: Prediction index $maxIndex exceeds labels length ${_diseaseLabels.length}');
+        debugPrint('Warning: Prediction index $maxIndex exceeds labels length ${_diseaseLabels.length}');
         return DiagnosisResult(
           disease: 'Analysis Error',
           confidence: 0.0,
@@ -268,7 +249,7 @@ class MLService {
       
       // If confidence is too low (< 40%), mark as uncertain
       if (confidence < 40.0) {
-        print('Low confidence prediction: ${confidence.toStringAsFixed(1)}%');
+        debugPrint('Low confidence prediction: ${confidence.toStringAsFixed(1)}%');
         predictedDisease = '$predictedDisease (Hindi Sigurado)';
       }
       
@@ -279,7 +260,7 @@ class MLService {
         final label = idx < _diseaseLabels.length ? _diseaseLabels[idx] : 'Unknown';
         return '${i + 1}. $label ${(predictions[idx] * 100).toStringAsFixed(1)}%';
       }).join(' ');
-      print('Disease model top: $top');
+      debugPrint('Disease model top: $top');
       
       return DiagnosisResult(
         disease: predictedDisease,
@@ -288,8 +269,8 @@ class MLService {
         allPredictions: Map.fromIterables(_diseaseLabels, predictions),
       );
     } catch (e, stackTrace) {
-      print('Error during disease analysis: $e');
-      print('Stack trace: $stackTrace');
+      debugPrint('Error during disease analysis: $e');
+      debugPrint('Stack trace: $stackTrace');
       return DiagnosisResult(
         disease: 'Analysis Error',
         confidence: 0.0,
@@ -331,26 +312,26 @@ class MLService {
     try {
       features = await _extractSweetnessFeatures(imagePath);
     } catch (e) {
-      print('Sweetness feature extraction failed: $e');
+      debugPrint('Sweetness feature extraction failed: $e');
       return SweetnessResult(level: null, levelName: null, confidence: 0.0, isModelLoaded: false);
     }
     if (features.length != 100) {
-      print('⚠ Sweetness features: expected 100, got ${features.length}');
+      debugPrint('⚠ Sweetness features: expected 100, got ${features.length}');
     }
 
     if (_sweetnessInterpreter != null) {
       try {
         final inputTensors = _sweetnessInterpreter!.getInputTensors();
         final expectedInputShape = inputTensors[0].shape;
-        print('Sweetness model expects input shape: $expectedInputShape');
+        debugPrint('Sweetness model expects input shape: $expectedInputShape');
         
         final outputTensors = _sweetnessInterpreter!.getOutputTensors();
         final outputShape = outputTensors[0].shape;
-        print('Sweetness model output shape: $outputShape');
+        debugPrint('Sweetness model output shape: $outputShape');
         
         // Check if model outputs 4 classes (M1, M2, M3, M4) or single scalar
         final isClassification = outputShape.length >= 2 && outputShape[1] == 4;
-        print('Sweetness model type: ${isClassification ? "4-class classification" : "scalar regression"}');
+        debugPrint('Sweetness model type: ${isClassification ? "4-class classification" : "scalar regression"}');
         
         // Resize to expected shape and allocate
         _sweetnessInterpreter!.resizeInputTensor(0, expectedInputShape);
@@ -358,7 +339,7 @@ class MLService {
         
         // Create input as 2D list [[100 floats]] if model expects [1, 100]
         final List<List<double>> input2D = [features.map((f) => f.toDouble()).toList()];
-        print('Sweetness input: ${input2D[0].length} floats, sample values: ${features.take(5).map((v) => v.toStringAsFixed(3)).toList()}');
+        debugPrint('Sweetness input: ${input2D[0].length} floats, sample values: ${features.take(5).map((v) => v.toStringAsFixed(3)).toList()}');
         
         String levelResult;
         double confidenceResult;
@@ -369,7 +350,7 @@ class MLService {
           _sweetnessInterpreter!.run(input2D, output);
           
           List<double> probs = (output[0] as List).map((v) => (v is int) ? v.toDouble() : v as double).toList();
-          print('Sweetness raw output (from model): ${probs.map((v) => v.toStringAsFixed(4)).toList()}');
+          debugPrint('Sweetness raw output (from model): ${probs.map((v) => v.toStringAsFixed(4)).toList()}');
           
           // Apply softmax if not already probabilities
           final sum = probs.reduce((a, b) => a + b);
@@ -389,19 +370,19 @@ class MLService {
           
           levelResult = _sweetnessLabels[maxIdx];
           confidenceResult = maxProb * 100;
-          print('Sweetness (classification): $levelResult (${confidenceResult.toStringAsFixed(1)}%)');
-          print('  M1=${(probs[0]*100).toStringAsFixed(1)}% M2=${(probs[1]*100).toStringAsFixed(1)}% M3=${(probs[2]*100).toStringAsFixed(1)}% M4=${(probs[3]*100).toStringAsFixed(1)}%');
+          debugPrint('Sweetness (classification): $levelResult (${confidenceResult.toStringAsFixed(1)}%)');
+          debugPrint('  M1=${(probs[0]*100).toStringAsFixed(1)}% M2=${(probs[1]*100).toStringAsFixed(1)}% M3=${(probs[2]*100).toStringAsFixed(1)}% M4=${(probs[3]*100).toStringAsFixed(1)}%');
         } else {
           // Model outputs single scalar — run inference (result based on model only)
           final output = [[0.0]];
           _sweetnessInterpreter!.run(input2D, output);
           if (output.isEmpty || output[0].isEmpty) throw Exception('Empty output');
           double raw = output[0][0].toDouble(); // Raw value from model inference only
-          print('Sweetness raw scalar output (from model): $raw');
+          debugPrint('Sweetness raw scalar output (from model): $raw');
           
           // Validate model output - if invalid, return error instead of defaulting
           if (raw.isNaN || raw.isInfinite) {
-            print('ERROR: Model output is invalid (NaN/Infinite) - returning null result');
+            debugPrint('ERROR: Model output is invalid (NaN/Infinite) - returning null result');
             return SweetnessResult(
               level: null,
               levelName: null,
@@ -441,12 +422,12 @@ class MLService {
               mappedLevel = 'M3';
               mappedConfidence = (1.0 - (raw - 3.2).abs() / 0.3).clamp(0.0, 1.0) * 100;
             }
-            print('Model output > 1.0, direct mapping: $raw -> $mappedLevel (ALL M1-M4 possible: M1<2.4, M4=2.4-2.7, M2=2.7-2.9, M3>2.9)');
+            debugPrint('Model output > 1.0, direct mapping: $raw -> $mappedLevel (ALL M1-M4 possible: M1<2.4, M4=2.4-2.7, M2=2.7-2.9, M3>2.9)');
           } else if (raw < 0.0) {
             // Negative values -> M1
             mappedLevel = 'M1';
             mappedConfidence = 50.0;
-            print('Model output < 0.0, mapping to M1');
+            debugPrint('Model output < 0.0, mapping to M1');
           } else {
             // Output is 0-1 range: normalize to bins (ALL M1-M4 possible via bins)
             // Bins: [0.125=M1, 0.375=M2, 0.625=M3, 0.875=M4]
@@ -455,12 +436,12 @@ class MLService {
             mappedLevel = level.level;
             final dist = (normalizedRaw - _bins[level.index]).abs();
             mappedConfidence = ((1.0 - 4 * dist).clamp(0.0, 1.0) * 100).clamp(0.0, 100.0);
-            print('Model output 0-1 range, normalized: $raw -> $mappedLevel (ALL M1-M4 possible via bins)');
+            debugPrint('Model output 0-1 range, normalized: $raw -> $mappedLevel (ALL M1-M4 possible via bins)');
           }
           
           levelResult = mappedLevel;
           confidenceResult = mappedConfidence;
-          print('Sweetness (from model only): $levelResult (${confidenceResult.toStringAsFixed(1)}%) raw=$raw');
+          debugPrint('Sweetness (from model only): $levelResult (${confidenceResult.toStringAsFixed(1)}%) raw=$raw');
         }
         
         // Sweetness reading is 100% from model inference — no fallback or hardcoded level
@@ -472,13 +453,13 @@ class MLService {
           isModelLoaded: true,
         );
       } catch (e) {
-        print('Sweetness inference error: $e');
+        debugPrint('Sweetness inference error: $e');
         return SweetnessResult(level: null, levelName: null, confidence: 0.0, isModelLoaded: true, error: e.toString());
       }
     }
 
     // Model not loaded - return null result instead of fallback
-    print('Sweetness model not loaded - returning null result');
+    debugPrint('Sweetness model not loaded - returning null result');
     return SweetnessResult(
       level: null,
       levelName: null,
@@ -529,7 +510,7 @@ class MLService {
     
     // Crop to square
     image = img.copyCrop(image, x: cropX, y: cropY, width: minDim, height: minDim);
-    print('Image cropped to ${image.width}x${image.height} from ${originalWidth}x$originalHeight');
+    debugPrint('Image cropped to ${image.width}x${image.height} from ${originalWidth}x$originalHeight');
     
     // Step 2: Resize to 224x224 using bilinear interpolation
     const inputSize = 224;
@@ -537,7 +518,7 @@ class MLService {
     
     // Debug: print sample pixel values to verify preprocessing
     final samplePixel = image.getPixel(112, 112);
-    print('Sample pixel at center (112,112): R=${samplePixel.r.toInt()}, G=${samplePixel.g.toInt()}, B=${samplePixel.b.toInt()}');
+    debugPrint('Sample pixel at center (112,112): R=${samplePixel.r.toInt()}, G=${samplePixel.g.toInt()}, B=${samplePixel.b.toInt()}');
     
     // Calculate average brightness for quality check
     double totalBrightness = 0;
@@ -548,12 +529,12 @@ class MLService {
       }
     }
     final avgBrightness = totalBrightness / (inputSize * inputSize);
-    print('Average image brightness: ${avgBrightness.toStringAsFixed(1)} (0-255)');
+    debugPrint('Average image brightness: ${avgBrightness.toStringAsFixed(1)} (0-255)');
     
     if (avgBrightness < 30) {
-      print('WARNING: Image is too dark, accuracy may be affected');
+      debugPrint('WARNING: Image is too dark, accuracy may be affected');
     } else if (avgBrightness > 225) {
-      print('WARNING: Image is too bright/overexposed, accuracy may be affected');
+      debugPrint('WARNING: Image is too bright/overexposed, accuracy may be affected');
     }
     
     // Keep RAW pixel values [0-255] - no normalization!
@@ -614,7 +595,7 @@ class MLService {
       throw Exception('Feature extraction error: expected 100 features, got ${out.length}');
     }
     
-    print('Sweetness features extracted: ${out.length} color-based features (RGB)');
+    debugPrint('Sweetness features extracted: ${out.length} color-based features (RGB)');
     return out;
   }
 

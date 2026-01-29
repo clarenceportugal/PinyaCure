@@ -1,13 +1,39 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../widgets/app_header.dart';
 import '../constants/app_colors.dart';
 import '../services/ml_service.dart';
 import '../services/history_service.dart';
 import 'treatment_screen.dart';
+
+/// Top-level for compute(): crops to camera frame and returns JPG bytes (runs off main thread).
+Uint8List? _cropAndEncodeFrameForHistory(String imagePath) {
+  try {
+    final bytes = File(imagePath).readAsBytesSync();
+    img.Image? image = img.decodeImage(bytes);
+    if (image == null) return null;
+    final w = image.width;
+    final h = image.height;
+    final minDim = w < h ? w : h;
+    final cropX = (w - minDim) ~/ 2;
+    final cropY = (h - minDim) ~/ 2;
+    image = img.copyCrop(image, x: cropX, y: cropY, width: minDim, height: minDim);
+    const maxSize = 512;
+    if (minDim > maxSize) {
+      image = img.copyResize(image, width: maxSize, height: maxSize, interpolation: img.Interpolation.linear);
+    }
+    final jpg = img.encodeJpg(image, quality: 85);
+    return Uint8List.fromList(jpg);
+  } catch (_) {
+    return null;
+  }
+}
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -146,6 +172,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
   }
 
+  /// Crops to camera frame and saves to app dir (heavy work in isolate so UI stays responsive).
+  Future<String?> _saveCameraFrameForHistory(String imagePath) async {
+    try {
+      final jpgBytes = await compute(_cropAndEncodeFrameForHistory, imagePath);
+      if (jpgBytes == null) return null;
+      final dir = await getApplicationDocumentsDirectory();
+      final fileName = 'scan_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final file = File('${dir.path}/$fileName');
+      await file.writeAsBytes(jpgBytes);
+      return file.path;
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to save camera frame for history: $e');
+      return null;
+    }
+  }
+
   Future<void> _takePicture() async {
     if (!_isInitialized || _controller == null || !_controller!.value.isInitialized) return;
     if (_isAnalyzing) return;
@@ -193,9 +235,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
         }
       }
 
-      // Analyze with ML models — results are based on model inference only
-      final diagnosisResult = await _mlService.analyzeImage(photo.path);
-      final sweetnessResult = await _mlService.predictSweetness(photo.path);
+      // Run both models in parallel so scan is faster
+      final results = await Future.wait([
+        _mlService.analyzeImage(photo.path),
+        _mlService.predictSweetness(photo.path),
+      ]);
+      final diagnosisResult = results[0] as DiagnosisResult;
+      final sweetnessResult = results[1] as SweetnessResult;
       
       // Log results (sweetness comes from model only when isModelLoaded is true)
       if (kDebugMode) {
@@ -231,7 +277,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
           _isAnalyzing = false;
         });
 
-        // Save to history
+        // Save only the camera-frame (center square) image for history
+        final String? savedFramePath = await _saveCameraFrameForHistory(photo.path);
         await _historyService.saveScan(
           ScanHistoryItem(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -239,7 +286,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             confidence: diagnosisResult.confidence,
             sweetnessLevel: sweetnessResult.level,
             sweetnessName: sweetnessResult.levelName,
-            imagePath: photo.path,
+            imagePath: savedFramePath,
             timestamp: DateTime.now(),
           ),
         );
@@ -291,13 +338,38 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
-                    // Camera Preview Area
+                    // Camera Preview Area — loading overlay only on this frame
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.35,
-                      child: GestureDetector(
-                        onTapDown: _onCameraTap, // Tap to focus
-                        onTap: _takePicture, // Long tap or double tap to capture
-                        child: _buildCameraContainer(),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          GestureDetector(
+                            onTapDown: _onCameraTap, // Tap to focus
+                            onTap: _takePicture, // Long tap or double tap to capture
+                            child: _buildCameraContainer(),
+                          ),
+                          if (_isAnalyzing)
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircularProgressIndicator(color: AppColors.primaryGreen),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Sinusuri ang larawan...',
+                                      style: TextStyle(color: Colors.white, fontSize: 16),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
 

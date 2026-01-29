@@ -357,6 +357,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
+                          cacheWidth: 400,
+                          cacheHeight: 400,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               color: AppColors.divider,
